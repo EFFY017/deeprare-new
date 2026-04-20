@@ -1,0 +1,3941 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>DeepRare · 诊断系统原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   DeepRare · Design Tokens
+   ============================================================ */
+
+:root {
+  /* ---------- Brand · Indigo (沉稳蓝) ---------- */
+  --brand-50:  #EEF3FC;
+  --brand-100: #D9E3F6;
+  --brand-200: #B4C6ED;
+  --brand-300: #85A3DF;
+  --brand-400: #5A7FCE;
+  --brand-500: #3A60B8;   /* primary */
+  --brand-600: #2B4C9D;
+  --brand-700: #213C7E;
+  --brand-800: #182D60;
+  --brand-900: #0F1E40;
+
+  /* ---------- Neutral · Ultra-clean ---------- */
+  --n-0:  #FFFFFF;
+  --n-25: #FFFFFF;
+  --n-50: #F9FAFC;
+  --n-100:#F2F4F7;
+  --n-150:#E9ECF1;
+  --n-200:#DCE0E6;
+  --n-300:#BCC2CC;
+  --n-400:#8F96A1;
+  --n-500:#6F7681;
+  --n-600:#52586A;
+  --n-700:#353B47;
+  --n-800:#21262F;
+  --n-900:#121620;
+
+  /* ---------- Semantic ---------- */
+  --bg:          var(--n-0);
+  --bg-sunken:   var(--n-50);
+  --bg-surface:  var(--n-0);
+  --bg-elevated: var(--n-0);
+  --bg-hover:    #F4F8FE;
+  --bg-selected: var(--brand-50);
+
+  --border:      var(--n-150);
+  --border-strong: var(--n-200);
+  --border-subtle: var(--n-100);
+
+  --text-1:      var(--n-900);
+  --text-2:      var(--n-700);
+  --text-3:      var(--n-500);
+  --text-4:      var(--n-400);
+  --text-inv:    var(--n-0);
+  --text-link:   var(--brand-600);
+
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+
+  /* ---------- Status (清晰临床色, 饱和度提升) ---------- */
+  --ok-50:  #DCF3E3; --ok-500:  #189D4E; --ok-700: #0F6B34;
+  --warn-50:#FDF0D0; --warn-500:#D98A0B; --warn-700:#8A5500;
+  --err-50: #FBE1DF; --err-500: #D6342C; --err-700: #961C16;
+  --info-50:#DCEBF7; --info-500:#1C7BC9; --info-700:#0F5389;
+  --neutral-50:var(--n-100); --neutral-500:var(--n-500); --neutral-700:var(--n-700);
+
+  /* ---------- ACMG · 新临床柔和色板 ---------- */
+  /* P Pathogenic  · 红 */
+  --acmg-p-bg:   #EFD6D3; --acmg-p-fg:  #8C2F2A; --acmg-p-bar:#E7C8C5;
+  /* LP Likely Path · 橘 */
+  --acmg-lp-bg:  #DCC4C2; --acmg-lp-fg: #7A2E28; --acmg-lp-bar:#CFAAA7;
+  /* VUS · 暖石 (同色卡) */
+  --acmg-vus-bg: #ECE7DA; --acmg-vus-fg:#6C5E3A; --acmg-vus-bar:#9A8854;
+  /* LB Likely Ben · 青 */
+  --acmg-lb-bg:  #D9E4E1; --acmg-lb-fg: #2F5C55; --acmg-lb-bar:#BCDED5;
+  /* B Benign · 绿 */
+  --acmg-b-bg:   #D9E7D5; --acmg-b-fg:  #2D5B36; --acmg-b-bar:#C8DEC2;
+
+  /* ---------- Radius ---------- */
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-3: 6px;
+  --r-4: 8px;
+  --r-5: 12px;
+  --r-pill: 999px;
+
+  /* ---------- Shadow ---------- */
+  --sh-1: 0 1px 0 rgba(20,25,34,.04), 0 1px 2px rgba(20,25,34,.04);
+  --sh-2: 0 2px 4px rgba(20,25,34,.06), 0 1px 2px rgba(20,25,34,.04);
+  --sh-3: 0 6px 16px -4px rgba(20,25,34,.10), 0 2px 4px rgba(20,25,34,.06);
+  --sh-pop: 0 12px 32px -8px rgba(20,25,34,.18), 0 4px 10px rgba(20,25,34,.08);
+  --sh-focus: 0 0 0 3px rgba(58,82,174,.22);
+
+  /* ---------- Density (standard by default) ---------- */
+  --row-h:       36px;
+  --row-h-tight: 32px;
+  --cell-px:     12px;
+  --pad-1: 4px;
+  --pad-2: 8px;
+  --pad-3: 12px;
+  --pad-4: 16px;
+  --pad-5: 20px;
+  --pad-6: 24px;
+  --pad-8: 32px;
+
+  /* ---------- Type ---------- */
+  --font-sans: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fz-11: 11px;
+  --fz-12: 12px;
+  --fz-13: 13px;
+  --fz-14: 14px;
+  --fz-15: 15px;
+  --fz-16: 16px;
+  --fz-18: 18px;
+  --fz-20: 20px;
+  --fz-24: 24px;
+  --fz-30: 30px;
+  --fz-36: 36px;
+  --fz-48: 48px;
+
+  --lh-tight: 1.25;
+  --lh-base:  1.5;
+  --lh-loose: 1.65;
+}
+
+/* ---------- Density · Compact ---------- */
+html[data-density="compact"] {
+  --row-h:       30px;
+  --row-h-tight: 26px;
+  --cell-px:     10px;
+  --pad-3: 10px;
+  --pad-4: 12px;
+  --pad-5: 16px;
+  --pad-6: 20px;
+}
+
+/* ---------- Theme variants ---------- */
+html[data-theme="teal"] {
+  --brand-50:  #E4F2F1;
+  --brand-100: #C6E2E0;
+  --brand-200: #94C7C2;
+  --brand-300: #5FA9A2;
+  --brand-400: #3C8B84;
+  --brand-500: #247068;
+  --brand-600: #1A5A52;
+  --brand-700: #124440;
+  --brand-800: #0C322E;
+  --brand-900: #07211F;
+  --text-link:   var(--brand-600);
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+  --bg-selected: var(--brand-50);
+  --sh-focus: 0 0 0 3px rgba(36,112,104,.22);
+}
+
+html[data-theme="graphite"] {
+  --brand-50:  #EEF0F2;
+  --brand-100: #DDE0E4;
+  --brand-200: #BBC1CA;
+  --brand-300: #8E97A4;
+  --brand-400: #5F6A7A;
+  --brand-500: #3B4556;
+  --brand-600: #2C3644;
+  --brand-700: #212834;
+  --brand-800: #171C26;
+  --brand-900: #0D1118;
+  --text-link:   #2C4196;
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+  --bg-selected: #EEF1FA;
+  --sh-focus: 0 0 0 3px rgba(59,69,86,.22);
+}
+
+html[data-theme="plum"] {
+  --brand-50:  #F1EBF2;
+  --brand-100: #E2D5E6;
+  --brand-200: #C4ABCD;
+  --brand-300: #9E7AAB;
+  --brand-400: #7A5388;
+  --brand-500: #5D3B6C;
+  --brand-600: #4A2E58;
+  --brand-700: #382343;
+  --brand-800: #28182F;
+  --brand-900: #180D1C;
+  --text-link:   var(--brand-600);
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+  --bg-selected: var(--brand-50);
+  --sh-focus: 0 0 0 3px rgba(93,59,108,.22);
+}
+
+/* ============================================================
+   DeepRare · Base
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+html {
+  font-family: var(--font-sans);
+  font-size: var(--fz-14);
+  color: var(--text-1);
+  background: var(--bg);
+  font-feature-settings: "cv11", "ss01", "tnum";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  font-size: var(--fz-14);
+  line-height: var(--lh-base);
+}
+
+::selection { background: var(--brand-100); color: var(--brand-900); }
+
+a { color: var(--text-link); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+button { font-family: inherit; }
+
+code, .mono, .tnum { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+/* ---- layout shell for the doc page ---- */
+.doc {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 40px 120px;
+}
+.doc__head {
+  padding: 56px 0 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 56px;
+}
+.doc__brand {
+  display: flex; align-items: center; gap: 14px;
+}
+.doc__logo {
+  width: 44px; height: 44px;
+  border-radius: var(--r-3);
+  background: var(--brand-500);
+  display: grid; place-items: center;
+  color: white;
+  box-shadow: var(--sh-2);
+  position: relative;
+  overflow: hidden;
+}
+.doc__logo::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.18), transparent 60%);
+}
+.doc__title {
+  font-size: var(--fz-30);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.1;
+}
+.doc__subtitle {
+  color: var(--text-3);
+  font-size: var(--fz-14);
+  margin-top: 4px;
+}
+.doc__meta {
+  display: flex; gap: 24px;
+  font-size: var(--fz-12);
+  color: var(--text-3);
+}
+.doc__meta b { color: var(--text-1); font-weight: 600; }
+
+.doc__toc {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 56px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+}
+.doc__toc a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: var(--r-2);
+  font-size: var(--fz-12);
+  color: var(--text-2);
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.doc__toc a:hover {
+  background: var(--bg-hover);
+  text-decoration: none;
+  border-color: var(--border);
+}
+.doc__toc a small { color: var(--text-4); margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+.section {
+  margin-bottom: 80px;
+  scroll-margin-top: 24px;
+}
+.section__eyebrow {
+  font-size: var(--fz-11);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.section__title {
+  font-size: var(--fz-24);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+.section__desc {
+  font-size: var(--fz-14);
+  color: var(--text-3);
+  max-width: 720px;
+  margin: 0 0 28px;
+  line-height: var(--lh-loose);
+}
+.section__head {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.sub {
+  margin-top: 32px;
+}
+.sub__title {
+  font-size: var(--fz-13);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sub__title::before {
+  content: ""; width: 3px; height: 12px; background: var(--accent); border-radius: 2px;
+}
+
+/* ---- frame: boxed content block ---- */
+.frame {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  padding: var(--pad-5);
+}
+.frame--flush { padding: 0; overflow: hidden; }
+.frame--canvas {
+  background:
+    linear-gradient(var(--border-subtle) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--bg-surface);
+  padding: 32px;
+}
+
+/* caption under samples */
+.cap {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 10px;
+  display: flex; gap: 8px; align-items: center;
+}
+.cap code { font-size: var(--fz-11); background: var(--n-100); padding: 1px 6px; border-radius: var(--r-2); color: var(--text-2); text-transform: none; letter-spacing: 0; }
+
+/* ============================================================
+   DeepRare · Component styles
+   ============================================================ */
+
+/* ---------- Color swatch ---------- */
+.swatch-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.swatch {
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+.swatch__chip {
+  height: 72px;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  color: rgba(255,255,255,.92);
+  font-size: var(--fz-12);
+  font-weight: 500;
+}
+.swatch__chip.is-light { color: rgba(20,25,34,.72); }
+.swatch__body { padding: 10px 12px; display: flex; justify-content: space-between; font-size: var(--fz-12); }
+.swatch__body .mono { color: var(--text-3); font-size: var(--fz-11); }
+
+.scale {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+.scale__step {
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-size: var(--fz-11);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: rgba(20,25,34,.7);
+}
+.scale__step.is-dark { color: rgba(255,255,255,.85); }
+.scale__step small { opacity: .7; font-size: 10px; }
+
+/* ---------- Typography spec ---------- */
+.type-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 260px;
+  gap: 24px;
+  padding: 20px 0;
+  border-bottom: 1px dashed var(--border);
+  align-items: baseline;
+}
+.type-row:last-child { border-bottom: none; }
+.type-row__name { font-size: var(--fz-12); font-weight: 600; color: var(--text-2); }
+.type-row__name small { display: block; color: var(--text-4); font-weight: 400; margin-top: 4px; letter-spacing: 0; text-transform: none; font-family: var(--font-mono); }
+.type-row__sample { color: var(--text-1); }
+.type-row__spec { font-family: var(--font-mono); font-size: var(--fz-11); color: var(--text-3); text-align: right; line-height: 1.7; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-3);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-1);
+  font-size: var(--fz-13);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color .12s, border-color .12s, color .12s, box-shadow .12s;
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:focus-visible { outline: none; box-shadow: var(--sh-focus); }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+
+.btn--primary { background: var(--accent); color: var(--text-inv); }
+.btn--primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn--primary:active { background: var(--brand-700); }
+
+.btn--secondary { border-color: var(--border-strong); background: var(--bg-surface); color: var(--text-1); }
+.btn--secondary:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--n-300); }
+
+.btn--ghost { color: var(--text-2); }
+.btn--ghost:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-1); }
+
+.btn--danger { background: var(--err-500); color: var(--text-inv); }
+.btn--danger:hover:not(:disabled) { background: var(--err-700); }
+
+.btn--link { color: var(--text-link); height: auto; padding: 0; }
+.btn--link:hover { text-decoration: underline; background: transparent; }
+
+.btn--sm { height: 26px; padding: 0 8px; font-size: var(--fz-12); border-radius: var(--r-2); }
+.btn--lg { height: 38px; padding: 0 16px; font-size: var(--fz-14); }
+.btn--icon { width: 28px; height: 28px; padding: 0; }
+
+.btn__kbd {
+  margin-left: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.24);
+}
+.btn--secondary .btn__kbd, .btn--ghost .btn__kbd { background: var(--n-100); border-color: var(--border); color: var(--text-3); }
+
+/* ---------- Form controls ---------- */
+.input, .select, .textarea {
+  display: block;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-3);
+  background: var(--bg-surface);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: var(--fz-13);
+  transition: border-color .12s, box-shadow .12s;
+}
+.input::placeholder, .textarea::placeholder { color: var(--text-4); }
+.input:hover, .select:hover, .textarea:hover { border-color: var(--n-300); }
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--accent); box-shadow: var(--sh-focus); }
+.input[aria-invalid="true"] { border-color: var(--err-500); }
+.input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(178,74,69,.22); }
+.textarea { height: auto; min-height: 80px; padding: 8px 10px; line-height: 1.55; resize: vertical; }
+.select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%236B7484' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 12px; padding-right: 28px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: var(--fz-12); font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 4px; }
+.field__label .req { color: var(--err-500); }
+.field__hint { font-size: var(--fz-11); color: var(--text-4); }
+.field__error { font-size: var(--fz-11); color: var(--err-500); }
+
+/* inline icon in input */
+.input-wrap { position: relative; }
+.input-wrap .input { padding-left: 30px; }
+.input-wrap__icon {
+  position: absolute; left: 9px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-4);
+  pointer-events: none;
+  display: grid; place-items: center;
+}
+
+/* checkbox, radio */
+.check, .radio {
+  appearance: none;
+  width: 14px; height: 14px;
+  border: 1.5px solid var(--n-300);
+  background: var(--bg-surface);
+  display: inline-grid; place-items: center;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  vertical-align: -2px;
+}
+.check { border-radius: 3px; }
+.radio { border-radius: 50%; }
+.check:checked, .radio:checked { background: var(--accent); border-color: var(--accent); }
+.check:checked::after { content: ""; width: 7px; height: 3px; border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.radio:checked::after { content: ""; width: 5px; height: 5px; background: #fff; border-radius: 50%; }
+.check:focus-visible, .radio:focus-visible { outline: none; box-shadow: var(--sh-focus); }
+
+/* switch */
+.switch { position: relative; width: 28px; height: 16px; background: var(--n-200); border-radius: 999px; display: inline-block; transition: background .15s; cursor: pointer; vertical-align: -3px; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: var(--sh-1); transition: left .15s; }
+.switch.is-on { background: var(--accent); }
+.switch.is-on::after { left: 14px; }
+
+/* segmented / tabs */
+.segmented {
+  display: inline-flex;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: 2px;
+  gap: 2px;
+}
+.segmented__item {
+  padding: 4px 12px;
+  font-size: var(--fz-12);
+  font-weight: 500;
+  color: var(--text-2);
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: background .12s;
+}
+.segmented__item:hover { color: var(--text-1); }
+.segmented__item.is-active { background: var(--bg-surface); color: var(--text-1); box-shadow: var(--sh-1); }
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  gap: 0;
+}
+.tabs__item {
+  padding: 10px 16px;
+  font-size: var(--fz-13);
+  font-weight: 500;
+  color: var(--text-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  border-top: none; border-left: none; border-right: none;
+  background: transparent;
+  transition: color .12s, border-color .12s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tabs__item:hover { color: var(--text-1); }
+.tabs__item.is-active { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs__item .count {
+  font-size: var(--fz-11);
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--n-100);
+  color: var(--text-3);
+}
+.tabs__item.is-active .count { background: var(--accent-soft); color: var(--accent); }
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--r-2);
+  font-size: var(--fz-11);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  background: var(--n-100);
+  color: var(--text-2);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.badge--pill { border-radius: var(--r-pill); padding: 0 10px; }
+.badge--soft-brand { background: var(--accent-soft); color: var(--brand-700); }
+.badge--soft-ok    { background: var(--ok-50);    color: var(--ok-700); }
+.badge--soft-warn  { background: var(--warn-50);  color: var(--warn-700); }
+.badge--soft-err   { background: var(--err-50);   color: var(--err-700); }
+.badge--soft-info  { background: var(--info-50);  color: var(--info-700); }
+
+.badge--outline { background: transparent; border-color: var(--border-strong); color: var(--text-2); }
+.badge--dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .75; }
+
+/* ACMG badges (monospace, uppercase) */
+.acmg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-2);
+  font-family: var(--font-mono);
+  font-size: var(--fz-11);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+.acmg--p   { background: var(--acmg-p-bg);   color: var(--acmg-p-fg); }
+.acmg--lp  { background: var(--acmg-lp-bg);  color: var(--acmg-lp-fg); }
+.acmg--vus { background: var(--acmg-vus-bg); color: var(--acmg-vus-fg); }
+.acmg--lb  { background: var(--acmg-lb-bg);  color: var(--acmg-lb-fg); }
+.acmg--b   { background: var(--acmg-b-bg);   color: var(--acmg-b-fg); }
+
+/* HPO tag */
+.hpo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 4px 0 8px;
+  background: var(--accent-soft);
+  color: var(--brand-700);
+  border: 1px solid var(--brand-100);
+  border-radius: var(--r-2);
+  font-size: var(--fz-12);
+  font-weight: 500;
+  max-width: 260px;
+}
+.hpo__id {
+  font-family: var(--font-mono);
+  font-size: var(--fz-11);
+  color: var(--brand-600);
+  opacity: .78;
+}
+.hpo__label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hpo__x {
+  display: grid; place-items: center;
+  width: 16px; height: 16px;
+  margin-left: 2px;
+  border-radius: 3px;
+  color: var(--brand-600);
+  cursor: pointer;
+  opacity: .6;
+}
+.hpo__x:hover { opacity: 1; background: var(--brand-100); }
+.hpo--neg { background: var(--n-50); color: var(--text-2); border-color: var(--border); }
+.hpo--neg .hpo__id, .hpo--neg .hpo__x { color: var(--text-3); }
+.hpo--neg::before { content: "¬"; font-weight: 700; color: var(--err-500); margin-right: -2px; }
+
+/* ---------- Status dot / indicators ---------- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fz-12);
+  font-weight: 500;
+  color: var(--text-2);
+}
+.status__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--n-300);
+  flex-shrink: 0;
+}
+.status--running .status__dot { background: var(--info-500); position: relative; }
+.status--running .status__dot::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%;
+  border: 2px solid var(--info-500); opacity: .4;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+.status--ok   .status__dot { background: var(--ok-500); }
+.status--warn .status__dot { background: var(--warn-500); }
+.status--err  .status__dot { background: var(--err-500); }
+.status--queue .status__dot { background: var(--n-400); }
+.status--done .status__dot { background: var(--ok-500); }
+
+@keyframes pulse-ring {
+  0%   { transform: scale(.6); opacity: .8; }
+  80%  { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* spinner */
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--n-200);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  display: inline-block;
+  vertical-align: -2px;
+}
+.spinner--lg { width: 20px; height: 20px; border-width: 2.5px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Progress bar ---------- */
+.progress {
+  position: relative;
+  height: 6px;
+  background: var(--n-100);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.progress__fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width .3s ease;
+}
+.progress--ok .progress__fill   { background: var(--ok-500); }
+.progress--warn .progress__fill { background: var(--warn-500); }
+.progress--err .progress__fill  { background: var(--err-500); }
+.progress--sm { height: 4px; }
+.progress--lg { height: 10px; }
+.progress--striped .progress__fill {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255,255,255,.18) 25%, transparent 25%,
+    transparent 50%, rgba(255,255,255,.18) 50%,
+    rgba(255,255,255,.18) 75%, transparent 75%, transparent);
+  background-size: 12px 12px;
+  animation: stripes 1.2s linear infinite;
+}
+@keyframes stripes { to { background-position: 12px 0; } }
+
+/* match bar (row inline) */
+.match-bar {
+  display: flex; align-items: center; gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.match-bar__track { flex: 1; height: 4px; background: var(--n-100); border-radius: var(--r-pill); overflow: hidden; min-width: 80px; }
+.match-bar__fill  { height: 100%; background: var(--accent); border-radius: inherit; }
+.match-bar__val   { font-size: var(--fz-12); font-weight: 600; color: var(--text-1); min-width: 40px; text-align: right; font-family: var(--font-mono); }
+
+/* ---------- Stepper ---------- */
+.stepper {
+  display: flex;
+  gap: 0;
+}
+.stepper__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  padding-right: 24px;
+}
+.stepper__item:last-child { padding-right: 0; flex: 0 0 auto; }
+.stepper__bar {
+  height: 3px;
+  background: var(--n-150);
+  border-radius: 2px;
+  position: relative;
+}
+.stepper__bar::after {
+  content: "";
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--accent);
+  border-radius: inherit;
+  width: 0%;
+  transition: width .3s;
+}
+.stepper__item.is-done .stepper__bar::after { width: 100%; }
+.stepper__item.is-active .stepper__bar::after { width: 60%; background: var(--accent); }
+.stepper__item.is-active .stepper__bar { background: var(--accent-soft); }
+.stepper__label {
+  display: flex; gap: 8px; align-items: center;
+  font-size: var(--fz-12);
+  font-weight: 500;
+  color: var(--text-3);
+}
+.stepper__item.is-done .stepper__label { color: var(--text-2); }
+.stepper__item.is-active .stepper__label { color: var(--accent); font-weight: 600; }
+.stepper__num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--n-150); color: var(--text-3);
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 600;
+  font-family: var(--font-mono);
+}
+.stepper__item.is-done .stepper__num { background: var(--ok-500); color: #fff; }
+.stepper__item.is-active .stepper__num { background: var(--accent); color: #fff; }
+.stepper__meta { font-size: var(--fz-11); color: var(--text-4); margin-left: 26px; font-family: var(--font-mono); }
+
+/* ---------- Chat bubbles ---------- */
+.chat { display: flex; flex-direction: column; gap: 14px; }
+.chat__msg { display: flex; gap: 10px; max-width: 90%; }
+.chat__msg--ai { align-self: flex-start; }
+.chat__msg--user { align-self: flex-end; flex-direction: row-reverse; }
+.chat__avatar {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: var(--r-3);
+  display: grid; place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.chat__avatar--ai { background: var(--accent); color: #fff; }
+.chat__avatar--user { background: var(--n-100); color: var(--text-2); border: 1px solid var(--border); }
+.chat__bubble {
+  padding: 8px 12px;
+  border-radius: var(--r-4);
+  font-size: var(--fz-13);
+  line-height: 1.55;
+  background: var(--bg-sunken);
+  color: var(--text-1);
+  border: 1px solid var(--border-subtle);
+}
+.chat__msg--ai .chat__bubble { border-top-left-radius: 2px; }
+.chat__msg--user .chat__bubble {
+  border-top-right-radius: 2px;
+  background: var(--accent-soft);
+  color: var(--brand-800);
+  border-color: var(--brand-100);
+}
+.chat__bubble .refs { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.chat__bubble .cite-sup {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  cursor: pointer;
+  vertical-align: super;
+  margin-left: 2px;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}
+
+.chat__choices { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.chat__choice {
+  padding: 4px 10px;
+  font-size: var(--fz-12);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .12s;
+}
+.chat__choice:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* ---------- Timeline ---------- */
+.tl { position: relative; padding-left: 16px; }
+.tl::before {
+  content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px;
+  width: 1.5px; background: var(--border-strong); border-radius: 1px;
+}
+.tl__item { position: relative; padding: 4px 0 14px; }
+.tl__item::before {
+  content: ""; position: absolute; left: -16px; top: 7px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--bg-surface);
+  border: 2px solid var(--n-300);
+}
+.tl__item.is-current::before { border-color: var(--accent); background: var(--accent); }
+.tl__item.is-past::before { border-color: var(--n-300); background: var(--n-300); }
+.tl__date { font-size: var(--fz-11); font-family: var(--font-mono); color: var(--text-4); margin-bottom: 2px; }
+.tl__title { font-size: var(--fz-13); font-weight: 500; color: var(--text-1); margin-bottom: 2px; }
+.tl__meta { font-size: var(--fz-12); color: var(--text-3); }
+
+/* ---------- Tables ---------- */
+.tbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fz-13);
+}
+.tbl th, .tbl td {
+  padding: 0 var(--cell-px);
+  height: var(--row-h);
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-subtle);
+  line-height: 1.3;
+}
+.tbl th {
+  background: var(--n-0);
+  color: var(--text-3);
+  font-weight: 600;
+  font-size: var(--fz-11);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  position: sticky; top: 0; z-index: 1;
+}
+.tbl th.is-sort { cursor: pointer; user-select: none; }
+.tbl th.is-sort::after {
+  content: "↕"; opacity: .4; margin-left: 4px; font-size: 10px;
+}
+.tbl th.is-asc::after { content: "↑"; opacity: 1; color: var(--accent); }
+.tbl th.is-desc::after { content: "↓"; opacity: 1; color: var(--accent); }
+.tbl tbody tr { background: var(--bg-surface); }
+.tbl tbody tr:hover { background: var(--bg-hover); }
+.tbl tbody tr.is-selected { background: var(--bg-selected); }
+.tbl tbody tr.is-selected td { border-bottom-color: var(--brand-100); }
+.tbl tbody tr:last-child td { border-bottom: none; }
+
+.tbl td.num, .tbl th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.tbl td.mono { font-family: var(--font-mono); font-size: var(--fz-12); }
+
+/* left accent bar on selected / primary rows */
+.tbl tr.has-accent td:first-child { position: relative; padding-left: 16px; }
+.tbl tr.has-accent td:first-child::before {
+  content: ""; position: absolute; left: 0; top: 4px; bottom: 4px;
+  width: 3px; background: var(--accent); border-radius: 0 2px 2px 0;
+}
+.tbl tr.has-accent--p   td:first-child::before { background: var(--acmg-p-bar); }
+.tbl tr.has-accent--lp  td:first-child::before { background: var(--acmg-lp-bar); }
+.tbl tr.has-accent--vus td:first-child::before { background: var(--acmg-vus-bar); }
+.tbl tr.has-accent--lb  td:first-child::before { background: var(--acmg-lb-bar); }
+.tbl tr.has-accent--b   td:first-child::before { background: var(--acmg-b-bar); }
+
+/* zebra option */
+.tbl--zebra tbody tr:nth-child(odd) { background: var(--bg-surface); }
+.tbl--zebra tbody tr:nth-child(even) { background: var(--n-25); }
+.tbl--zebra tbody tr:hover { background: var(--bg-hover); }
+
+/* expandable row */
+.tbl .expander {
+  display: inline-grid; place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 3px;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: transform .15s, background .12s;
+}
+.tbl .expander:hover { background: var(--n-100); color: var(--text-1); }
+.tbl tr.is-expanded .expander { transform: rotate(90deg); color: var(--accent); }
+
+.tbl tr.row-detail > td {
+  background: var(--bg-sunken);
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* rank cell */
+.rank {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: var(--r-2);
+  font-family: var(--font-mono); font-weight: 700; font-size: var(--fz-12);
+  background: var(--n-100); color: var(--text-2);
+}
+.rank--1 { background: var(--accent); color: #fff; }
+.rank--2 { background: var(--brand-100); color: var(--brand-700); }
+.rank--3 { background: var(--brand-50); color: var(--brand-600); }
+
+/* confidence chip */
+.conf {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fz-12);
+}
+.conf__bar {
+  width: 56px; height: 5px; border-radius: var(--r-pill);
+  background: var(--n-100);
+  overflow: hidden;
+}
+.conf__fill { height: 100%; background: var(--accent); }
+.conf--high .conf__fill { background: var(--ok-500); }
+.conf--mid  .conf__fill { background: var(--warn-500); }
+.conf--low  .conf__fill { background: var(--err-500); }
+
+/* ---------- Cards (sparingly) ---------- */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+}
+.card__head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.card__title { font-size: var(--fz-13); font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+.card__body { padding: 16px; }
+
+/* ---------- Alert ---------- */
+.alert {
+  display: flex; gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-3);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  font-size: var(--fz-13);
+  align-items: flex-start;
+  border-left-width: 3px;
+}
+.alert__icon { flex-shrink: 0; padding-top: 1px; }
+.alert__body { flex: 1; }
+.alert__title { font-weight: 600; margin-bottom: 2px; }
+.alert__desc { color: var(--text-2); font-size: var(--fz-12); line-height: 1.55; }
+.alert--info  { background: var(--info-50); border-color: #AFCEE8; border-left-color: var(--info-500); }
+.alert--ok    { background: var(--ok-50);   border-color: #A8D9B7; border-left-color: var(--ok-500); }
+.alert--warn  { background: var(--warn-50); border-color: #EAC477; border-left-color: var(--warn-500); }
+.alert--err   { background: var(--err-50);  border-color: #EEB4B0; border-left-color: var(--err-500); }
+
+/* ---------- Dialog (danger confirm) ---------- */
+.dialog {
+  background: var(--bg-elevated);
+  border-radius: var(--r-5);
+  box-shadow: var(--sh-pop);
+  border: 1px solid var(--border);
+  width: 440px;
+  overflow: hidden;
+}
+.dialog__head {
+  padding: 16px 20px 8px;
+  display: flex; gap: 12px;
+}
+.dialog__icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--err-50);
+  color: var(--err-500);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.dialog__title { font-size: var(--fz-15); font-weight: 600; margin: 2px 0 4px; }
+.dialog__desc { font-size: var(--fz-13); color: var(--text-2); line-height: 1.6; }
+.dialog__confirm-field {
+  padding: 8px 20px 0;
+  font-size: var(--fz-12);
+  color: var(--text-3);
+}
+.dialog__confirm-field code { background: var(--n-100); padding: 1px 6px; border-radius: 3px; font-weight: 600; color: var(--err-700); }
+.dialog__body { padding: 12px 20px 0; }
+.dialog__foot {
+  padding: 16px 20px;
+  display: flex; justify-content: flex-end; gap: 8px;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+/* ---------- Spacing & Radius spec ---------- */
+.space-row { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.space-row:last-child { border-bottom: none; }
+.space-row__label { width: 80px; font-family: var(--font-mono); font-size: var(--fz-12); color: var(--text-2); }
+.space-row__visual { background: var(--accent-soft); border: 1px solid var(--brand-100); height: 16px; border-radius: 2px; }
+.space-row__value { font-family: var(--font-mono); font-size: var(--fz-11); color: var(--text-4); margin-left: auto; }
+
+.radii { display: flex; gap: 24px; }
+.radii__item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.radii__sample { width: 64px; height: 64px; background: var(--accent-soft); border: 1.5px solid var(--brand-200); }
+.radii__label { font-size: var(--fz-11); font-family: var(--font-mono); color: var(--text-3); text-align: center; }
+.radii__label b { display: block; color: var(--text-1); font-weight: 600; font-family: var(--font-sans); font-size: var(--fz-12); }
+
+/* ---------- Density toolbar (sticky) ---------- */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(250,251,252,.85);
+  backdrop-filter: saturate(180%) blur(10px);
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+  border-bottom: 1px solid var(--border);
+  margin: 0 -40px 32px;
+  padding: 10px 40px;
+  display: flex; align-items: center; gap: 16px;
+  font-size: var(--fz-12);
+}
+.toolbar .label { color: var(--text-3); font-weight: 500; margin-right: 4px; }
+.toolbar__spacer { flex: 1; }
+
+/* ---------- Two-column layout for section bodies ---------- */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.flex { display: flex; }
+.gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; } .gap-6 { gap: 24px; }
+.wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; } .mt-6 { margin-top: 24px; }
+.mb-1 { margin-bottom: 4px; } .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; }
+
+.t-xs { font-size: var(--fz-11); } .t-sm { font-size: var(--fz-12); } .t-md { font-size: var(--fz-13); } .t-lg { font-size: var(--fz-15); }
+.t-2 { color: var(--text-2); } .t-3 { color: var(--text-3); } .t-4 { color: var(--text-4); }
+.t-brand { color: var(--accent); }
+.fw-5 { font-weight: 500; } .fw-6 { font-weight: 600; } .fw-7 { font-weight: 700; }
+
+/* ============================================================
+   DeepRare · Scene preview styles
+   ============================================================ */
+
+.scene {
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+/* app chrome */
+.app {
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  background: var(--n-0);
+  height: 720px;
+}
+.app__bar {
+  display: flex; align-items: center;
+  padding: 0 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.app__logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: var(--fz-14);
+  letter-spacing: -0.01em;
+}
+.app__logo-mark {
+  width: 22px; height: 22px;
+  border-radius: var(--r-2);
+  background: var(--accent);
+  display: grid; place-items: center;
+  color: #fff;
+}
+.app__nav { display: flex; gap: 2px; margin-left: 16px; }
+.app__nav a {
+  padding: 6px 10px;
+  font-size: var(--fz-13);
+  color: var(--text-2);
+  border-radius: var(--r-2);
+  font-weight: 500;
+}
+.app__nav a.is-active { background: var(--accent-soft); color: var(--accent); }
+.app__nav a:hover { background: var(--bg-hover); text-decoration: none; }
+.app__right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.app__avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+  color: #fff; font-size: 11px; font-weight: 600;
+  display: grid; place-items: center;
+}
+.app__body { display: grid; grid-template-columns: auto 1fr; min-height: 0; background: var(--n-0); }
+.app__side {
+  width: 220px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
+}
+.app__side-group {
+  font-size: var(--fz-11);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-4);
+  padding: 10px 10px 6px;
+  font-weight: 600;
+}
+.app__side a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  font-size: var(--fz-13);
+  color: var(--text-2);
+  border-radius: var(--r-2);
+  font-weight: 500;
+}
+.app__side a .count { margin-left: auto; font-size: var(--fz-11); color: var(--text-4); font-family: var(--font-mono); }
+.app__side a.is-active { background: var(--accent-soft); color: var(--accent); }
+.app__side a:hover { background: var(--bg-hover); text-decoration: none; }
+.app__main { min-width: 0; overflow: auto; display: flex; flex-direction: column; }
+.app__page-head {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+}
+.app__page-title { font-size: var(--fz-18); font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.app__page-crumbs { font-size: var(--fz-12); color: var(--text-4); margin-bottom: 4px; }
+.app__page-crumbs a { color: var(--text-3); }
+.app__toolbar {
+  padding: 10px 24px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 10px; align-items: center;
+}
+.app__content { padding: 20px 24px; flex: 1; min-height: 0; }
+.app__content--flush { padding: 0; }
+
+/* patient detail two-pane */
+.detail {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 0;
+  height: 100%;
+}
+.detail__left {
+  border-right: 1px solid var(--border);
+  background: var(--bg-surface);
+  overflow-y: auto;
+  padding: 16px;
+}
+.detail__right {
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: var(--n-0);
+}
+
+.patient-id {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.patient-id__avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--brand-100); color: var(--brand-700);
+  display: grid; place-items: center;
+  font-weight: 600; font-size: var(--fz-14);
+}
+.patient-id__name { font-size: var(--fz-14); font-weight: 600; }
+.patient-id__meta { font-size: var(--fz-11); color: var(--text-3); font-family: var(--font-mono); }
+
+.kv { display: grid; grid-template-columns: 72px 1fr; gap: 4px 10px; font-size: var(--fz-12); }
+.kv dt { color: var(--text-4); }
+.kv dd { margin: 0; color: var(--text-1); }
+
+.split-pane {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+}
+
+/* conversation area */
+.convo {
+  padding: 16px 8px;
+  display: flex; flex-direction: column; gap: 14px;
+  overflow-y: auto;
+}
+
+/* composer */
+.composer {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-4);
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.composer__chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.composer__row { display: flex; gap: 8px; align-items: flex-end; }
+.composer__input {
+  flex: 1;
+  border: none;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  font-size: var(--fz-13);
+  background: transparent;
+  padding: 4px 0;
+  line-height: 1.5;
+  min-height: 32px;
+  max-height: 120px;
+}
+.composer__tools { display: flex; gap: 4px; align-items: center; color: var(--text-4); }
+
+/* upload zone */
+.upload {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-4);
+  padding: 28px;
+  text-align: center;
+  background: var(--bg-sunken);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.upload:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.upload__icon { margin-bottom: 8px; color: var(--text-4); }
+.upload__title { font-weight: 600; color: var(--text-1); font-size: var(--fz-14); margin-bottom: 4px; }
+.upload__hint { font-size: var(--fz-12); }
+
+/* ranked disease row expanded detail */
+.detail-expand {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+}
+.detail-expand__section { margin-bottom: 14px; }
+.detail-expand__section:last-child { margin-bottom: 0; }
+.detail-expand__h {
+  font-size: var(--fz-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 8px;
+}
+
+.cmp-table th, .cmp-table td { border-left: 1px solid var(--border-subtle); }
+.cmp-table th:first-child, .cmp-table td:first-child { border-left: none; }
+
+/* VCF variant detail expand */
+.acmg-crits {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.acmg-crit {
+  padding: 6px 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--fz-11);
+  display: flex; justify-content: space-between; gap: 6px;
+}
+.acmg-crit b { font-family: var(--font-mono); color: var(--acmg-p-fg); font-weight: 600; }
+.acmg-crit.is-benign b { color: var(--acmg-b-fg); }
+.acmg-crit small { color: var(--text-4); font-size: 10px; }
+
+/* big KPI */
+.kpi {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  background: var(--bg-surface);
+}
+.kpi__label { font-size: var(--fz-11); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.kpi__val { font-size: var(--fz-24); font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.02em; line-height: 1.1; }
+.kpi__sub { font-size: var(--fz-11); color: var(--text-4); font-family: var(--font-mono); }
+.kpi--accent .kpi__val { color: var(--accent); }
+
+/* vcf step card */
+.vcf-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.vcf-step {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--bg-surface);
+  display: flex; flex-direction: column; gap: 4px;
+  position: relative;
+  font-size: var(--fz-12);
+}
+.vcf-step::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--n-150); border-radius: 3px 0 0 3px;
+}
+.vcf-step.is-done::before { background: var(--ok-500); }
+.vcf-step.is-running::before { background: var(--accent); }
+.vcf-step__name { font-weight: 600; display: flex; align-items: center; gap: 6px; font-size: var(--fz-12); }
+.vcf-step__val { font-family: var(--font-mono); font-size: var(--fz-18); font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; }
+.vcf-step__meta { font-size: var(--fz-11); color: var(--text-4); font-family: var(--font-mono); }
+
+/* dialog backdrop */
+.backdrop {
+  position: relative;
+  padding: 32px;
+  background:
+    repeating-linear-gradient(135deg, rgba(20,25,34,.04) 0 1px, transparent 1px 10px),
+    var(--n-100);
+  border-radius: var(--r-4);
+  display: grid; place-items: center;
+}
+
+/* HPO match row */
+.hpo-match { display: grid; grid-template-columns: 1fr 70px 18px 110px; gap: 8px; align-items: center; font-size: var(--fz-12); padding: 4px 0; border-bottom: 1px dashed var(--border-subtle); }
+.hpo-match:last-child { border-bottom: none; }
+.hpo-match__id { font-family: var(--font-mono); color: var(--text-3); font-size: var(--fz-11); }
+.hpo-match__arrow { color: var(--text-4); text-align: center; }
+
+/* footer */
+.ds-foot {
+  margin-top: 120px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between;
+  color: var(--text-4);
+  font-size: var(--fz-12);
+}
+
+/* tweaks panel */
+.tweaks-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 260px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  box-shadow: var(--sh-pop);
+  padding: 14px;
+  z-index: 100;
+  font-size: var(--fz-12);
+}
+.tweaks-panel__title { font-weight: 600; font-size: var(--fz-13); margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; }
+.tweaks-panel__row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+.tweaks-panel__label { color: var(--text-2); }
+.theme-swatches { display: flex; gap: 6px; }
+.theme-swatch {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+}
+.theme-swatch.is-active { border-color: var(--text-1); }
+.theme-swatch[data-t="indigo"]   { background: #3A52AE; }
+.theme-swatch[data-t="teal"]     { background: #247068; }
+.theme-swatch[data-t="graphite"] { background: #3B4556; }
+.theme-swatch[data-t="plum"]     { background: #5D3B6C; }
+
+/* ============================================================
+   DeepRare · Prototype app-specific styles
+   ============================================================ */
+
+html, body, #root { height: 100%; }
+body { background: var(--bg-sunken); }
+
+/* full-viewport app shell */
+.shell {
+  display: grid;
+  grid-template-rows: 52px 1fr;
+  height: 100vh;
+  background: var(--n-0);
+}
+.shell__bar {
+  display: flex; align-items: center;
+  padding: 0 20px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  gap: 20px;
+}
+.shell__logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: var(--fz-14);
+  letter-spacing: -0.01em;
+}
+.shell__logo-mark {
+  width: 24px; height: 24px;
+  border-radius: var(--r-2);
+  background: var(--accent);
+  display: grid; place-items: center;
+  color: #fff;
+  position: relative; overflow: hidden;
+}
+.shell__logo-mark::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.22), transparent 60%);
+}
+.shell__logo-tag {
+  font-size: 10px; font-weight: 600;
+  color: var(--text-4);
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  margin-left: 2px;
+  letter-spacing: 0.04em;
+}
+.shell__nav { display: flex; gap: 2px; margin-left: 10px; }
+.shell__nav button {
+  padding: 6px 12px;
+  font-size: var(--fz-13);
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-2);
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.shell__nav button.is-active { background: var(--accent-soft); color: var(--accent); }
+.shell__nav button:hover { background: var(--bg-hover); }
+.shell__right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.shell__avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+  color: #fff; font-size: 11px; font-weight: 600;
+  display: grid; place-items: center;
+}
+.shell__content { overflow: auto; min-height: 0; background: var(--n-0); }
+
+/* --- Page: page heading area --- */
+.page-head {
+  padding: 20px 32px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 20px;
+}
+.page-head h1 { font-size: var(--fz-20); font-weight: 700; margin: 0 0 2px; letter-spacing: -0.01em; }
+.page-head .crumbs { font-size: var(--fz-12); color: var(--text-4); margin-bottom: 4px; }
+.page-head .crumbs a { color: var(--text-3); cursor: pointer; }
+.page-head .desc { font-size: var(--fz-12); color: var(--text-3); margin-top: 4px; }
+.page-head--compact { padding: 12px 32px 12px; }
+.page-head--compact h1 { font-size: var(--fz-16); margin: 0; }
+.page-head--compact .desc { font-size: var(--fz-12); margin-top: 2px; }
+
+.page-body { padding: 24px 32px 40px; }
+
+/* --- New-diagnosis page layout --- */
+.newdiag {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.newdiag__intro {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 18px;
+}
+.newdiag__intro-mark {
+  width: 44px; height: 44px;
+  border-radius: var(--r-4);
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.newdiag__card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+}
+.newdiag__tabs {
+  display: flex;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-sunken);
+  gap: 0;
+}
+.newdiag__tab {
+  padding: 14px 18px 12px;
+  background: transparent; border: none;
+  font-size: var(--fz-13);
+  font-weight: 500;
+  color: var(--text-3);
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.newdiag__tab.is-active { color: var(--accent); border-bottom-color: var(--accent); background: var(--bg-surface); }
+.newdiag__tab .muted { color: var(--text-4); font-weight: 400; font-size: var(--fz-12); }
+
+.newdiag__section {
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.newdiag__section:last-child { border-bottom: none; }
+.newdiag__section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.newdiag__section-title {
+  font-size: var(--fz-13);
+  font-weight: 600;
+  color: var(--text-1);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.newdiag__section-title .n {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  display: grid; place-items: center;
+}
+.newdiag__section-hint { font-size: var(--fz-12); color: var(--text-4); }
+
+/* patient search combo */
+.p-search {
+  position: relative;
+}
+.p-search__drop {
+  position: absolute;
+  top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  box-shadow: var(--sh-pop);
+  max-height: 260px; overflow-y: auto;
+  z-index: 30;
+  padding: 4px;
+}
+.p-search__item {
+  padding: 8px 10px;
+  border-radius: var(--r-2);
+  cursor: pointer;
+  display: flex; gap: 10px; align-items: center;
+  font-size: var(--fz-13);
+}
+.p-search__item:hover { background: var(--bg-hover); }
+.p-search__item.is-active { background: var(--bg-selected); }
+.p-search__item-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--brand-100); color: var(--brand-700);
+  display: grid; place-items: center;
+  font-weight: 600; font-size: var(--fz-12);
+  flex-shrink: 0;
+}
+.p-search__item-meta { color: var(--text-3); font-size: var(--fz-11); font-family: var(--font-mono); margin-left: auto; }
+.p-search__create {
+  padding: 10px; border-top: 1px solid var(--border);
+  color: var(--accent);
+  font-size: var(--fz-12); font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+}
+.p-search__create:hover { background: var(--bg-hover); }
+
+.selected-patient {
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--brand-100);
+  border-radius: var(--r-3);
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px;
+}
+.selected-patient__avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--brand-500); color: #fff;
+  display: grid; place-items: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.selected-patient__name { font-weight: 600; font-size: var(--fz-14); }
+.selected-patient__meta { font-size: var(--fz-12); color: var(--brand-700); opacity: .75; font-family: var(--font-mono); }
+.selected-patient__right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 16px;
+}
+.form-grid .field--wide { grid-column: span 3; }
+.form-grid .field--half { grid-column: span 1; }
+
+.readonly .input, .readonly .select, .readonly .textarea {
+  background: var(--n-50);
+  color: var(--text-2);
+}
+
+/* --- Patient list --- */
+.plist-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 32px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.plist-toolbar .input-wrap { width: 320px; }
+.plist-wrap {
+  padding: 16px 32px 40px;
+}
+.plist-frame {
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+.plist-frame .tbl th { background: var(--bg-sunken); position: sticky; top: 0; }
+.plist-frame .tbl tbody tr { cursor: pointer; }
+.plist-frame .tbl td { height: 48px; }
+.plist-frame .name-cell { display: flex; align-items: center; gap: 10px; }
+.plist-frame .name-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--brand-100); color: var(--brand-700);
+  display: grid; place-items: center;
+  font-weight: 600; font-size: var(--fz-12);
+  flex-shrink: 0;
+}
+.plist-frame .name-main { font-weight: 600; }
+.plist-frame .name-sub { font-size: var(--fz-11); color: var(--text-4); font-family: var(--font-mono); }
+.plist-frame .sum-cell { max-width: 340px; color: var(--text-2); font-size: var(--fz-12); }
+
+/* --- Patient detail two-pane (full height) --- */
+.pd-shell {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: 100%;
+  min-height: 0;
+}
+.pd-left {
+  border-right: 1px solid var(--border);
+  background: var(--bg-surface);
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.pd-left__top { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+.pd-left__section { padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.pd-left__section:last-of-type { border-bottom: none; }
+.pd-left__title {
+  font-size: var(--fz-11);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-4);
+  margin: 0 0 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pd-left__foot {
+  margin-top: auto;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sunken);
+  display: flex; gap: 8px;
+  position: relative;
+}
+.more-menu {
+  position: absolute;
+  bottom: calc(100% + 4px); left: 12px; right: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  box-shadow: var(--sh-pop);
+  padding: 4px;
+  z-index: 20;
+}
+.more-menu__item {
+  padding: 8px 10px;
+  border-radius: var(--r-2);
+  font-size: var(--fz-13);
+  color: var(--text-1);
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+}
+.more-menu__item:hover { background: var(--bg-hover); }
+.more-menu__item.is-danger { color: var(--err-500); }
+.more-menu__item.is-danger:hover { background: var(--err-50); }
+.more-menu__divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+.pd-right {
+  min-width: 0;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.pd-tabs-bar {
+  padding: 0 32px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  position: sticky; top: 0; z-index: 5;
+}
+.pd-tabs-bar .tabs { flex: 1; border-bottom: none; }
+.pd-tabs-bar__right { display: flex; gap: 8px; align-items: center; padding: 8px 0; }
+
+.pd-content { padding: 20px 32px 40px; }
+
+/* --- Disease ranked rows --- */
+.disease-rank {
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+.disease-rank__row {
+  display: grid;
+  grid-template-columns: 36px 1fr 140px 120px 160px 24px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background .12s;
+}
+.disease-rank__row:last-child { border-bottom: none; }
+.disease-rank__row:hover { background: var(--bg-hover); }
+.disease-rank__row.is-selected { background: var(--bg-selected); }
+.disease-rank__row.is-selected::before {
+  content: ""; position: absolute;
+  /* accent via parent below */
+}
+.disease-rank__row-wrap { position: relative; }
+.disease-rank__row-wrap.is-selected::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--accent);
+}
+.disease-rank__name-main { font-weight: 600; font-size: var(--fz-14); display: flex; align-items: center; gap: 8px; }
+.disease-rank__name-sub { font-size: var(--fz-11); color: var(--text-3); font-family: var(--font-mono); margin-top: 2px; }
+.disease-rank__omim { font-size: var(--fz-11); color: var(--text-4); font-family: var(--font-mono); }
+
+/* subtabs */
+.subtabs {
+  display: inline-flex;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: 3px;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.subtabs__item {
+  padding: 5px 12px;
+  font-size: var(--fz-12);
+  font-weight: 500;
+  color: var(--text-2);
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+.subtabs__item:hover { color: var(--text-1); }
+.subtabs__item.is-active { background: var(--bg-surface); color: var(--accent); box-shadow: var(--sh-1); }
+
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+}
+.panel__head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-sunken);
+}
+.panel__title { font-size: var(--fz-13); font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+.panel__body { padding: 16px; }
+.panel__body--flush { padding: 0; }
+
+/* hit badge */
+.hit {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fz-11); font-weight: 600;
+  padding: 2px 6px; border-radius: var(--r-2);
+}
+.hit--yes { background: var(--ok-50); color: var(--ok-700); }
+.hit--no  { background: var(--err-50); color: var(--err-700); }
+.hit--partial { background: var(--warn-50); color: var(--warn-700); }
+.hit--unknown { background: var(--n-100); color: var(--text-3); }
+
+.cite-sup {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  cursor: pointer;
+  vertical-align: super;
+  margin-left: 2px;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}
+
+/* KPI inline (for VCF summary) */
+.kpi-inline {
+  display: flex; align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.kpi-inline__item {
+  flex: 1;
+  padding: 12px 18px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.kpi-inline__item:last-child { border-right: none; }
+.kpi-inline__label {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.kpi-inline__val {
+  font-size: var(--fz-24);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+.kpi-inline__sub { font-size: var(--fz-11); color: var(--text-3); font-family: var(--font-mono); }
+.kpi-inline__item--accent .kpi-inline__val { color: var(--accent); }
+.kpi-inline__arrow {
+  position: absolute;
+  right: -8px; top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 16px; height: 16px;
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--bg-surface);
+  transform: translateY(-50%) rotate(45deg);
+}
+.kpi-inline__item:last-child .kpi-inline__arrow { display: none; }
+
+/* Variant table */
+.vtable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fz-13);
+}
+.vtable th, .vtable td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-subtle);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.vtable th {
+  background: var(--bg-sunken);
+  color: var(--text-3);
+  font-weight: 600;
+  font-size: var(--fz-11);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+.vtable tbody tr { background: var(--bg-surface); }
+.vtable tbody tr:hover { background: var(--bg-hover); }
+.vtable tbody tr.is-expanded { background: var(--bg-selected); }
+.vtable tbody tr.vtable__head { background: var(--bg-sunken); }
+.vtable tbody tr.vtable__head:hover { background: var(--bg-sunken); }
+.vtable tbody tr.vtable__head th { position: static; }
+.vtable .mono { font-family: var(--font-mono); font-size: var(--fz-12); }
+.vtable .expander {
+  display: inline-grid; place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 3px;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.vtable tr.is-expanded .expander { transform: rotate(90deg); color: var(--accent); }
+.vtable__section {
+  background: var(--n-50);
+  padding: 8px 14px;
+  font-size: var(--fz-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.vtable__section .count { font-family: var(--font-mono); color: var(--text-2); }
+
+.vdetail {
+  padding: 16px 22px;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* running stage card */
+.stage-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.stage-card__head {
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  gap: 12px;
+}
+.stage-card__num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--n-150);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  display: grid; place-items: center;
+}
+.stage-card.is-done .stage-card__num { background: var(--ok-500); color: #fff; }
+.stage-card.is-active .stage-card__num { background: var(--accent); color: #fff; }
+.stage-card__title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: var(--fz-14); }
+.stage-card__body { padding: 0; }
+.stage-card--collapsed .stage-card__body { display: none; }
+
+.reasoning-steps {
+  display: grid; grid-template-columns: 1fr; gap: 0;
+}
+.reasoning-step {
+  display: grid;
+  grid-template-columns: 28px 1fr 120px 60px;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fz-13);
+  align-items: center;
+}
+.reasoning-step:last-child { border-bottom: none; }
+.reasoning-step__icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--n-150);
+  color: var(--text-3);
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+}
+.reasoning-step.is-done .reasoning-step__icon { background: var(--ok-500); color: #fff; }
+.reasoning-step.is-running .reasoning-step__icon { background: var(--accent); color: #fff; position: relative; }
+.reasoning-step.is-running .reasoning-step__icon::after {
+  content: ""; position: absolute; inset: -3px;
+  border: 2px solid var(--accent);
+  border-radius: 50%; opacity: .4;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+.reasoning-step__name { font-weight: 600; }
+.reasoning-step.is-queue .reasoning-step__name { color: var(--text-3); font-weight: 500; }
+.reasoning-step__meta { font-size: var(--fz-12); color: var(--text-3); margin-top: 2px; }
+.reasoning-step__t { font-family: var(--font-mono); font-size: var(--fz-12); color: var(--text-4); text-align: right; }
+.reasoning-step__status { font-size: var(--fz-11); text-align: right; }
+
+.live-log {
+  background: var(--n-900);
+  color: #CBD2E0;
+  font-family: var(--font-mono);
+  font-size: var(--fz-11);
+  padding: 12px 16px;
+  line-height: 1.7;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.live-log__line { display: flex; gap: 10px; }
+.live-log__t { color: #6C7793; }
+
+/* HPO confirm list */
+.hpo-bag {
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--bg-sunken);
+  padding: 10px;
+  min-height: 100px;
+  display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start;
+}
+
+/* history timeline */
+.hist-list {
+  display: flex; flex-direction: column; gap: 0;
+}
+.hist-item {
+  display: grid;
+  grid-template-columns: 64px 1fr 120px;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: start;
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-item__type {
+  font-family: var(--font-mono);
+  font-size: var(--fz-11);
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--r-2);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+.hist-item__type--HPO { background: var(--accent-soft); color: var(--brand-700); }
+.hist-item__type--VCF { background: var(--acmg-vus-bg); color: var(--acmg-vus-fg); }
+.hist-item__title { font-weight: 600; font-size: var(--fz-13); margin-bottom: 3px; }
+.hist-item__summary { font-size: var(--fz-12); color: var(--text-2); line-height: 1.55; }
+.hist-item__meta { font-size: var(--fz-11); color: var(--text-4); font-family: var(--font-mono); margin-top: 3px; }
+.hist-item__right { text-align: right; font-family: var(--font-mono); font-size: var(--fz-11); color: var(--text-4); }
+
+/* overlay */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(20,25,34,.48);
+  display: grid; place-items: center;
+  z-index: 100;
+  animation: fade-in .15s ease-out;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* chip group for filter */
+.chip-group { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 3px 10px;
+  font-size: var(--fz-12);
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+.chip.is-active { background: var(--accent-soft); color: var(--accent); border-color: var(--brand-200); }
+
+/* misc */
+.sep { height: 1px; background: var(--border); margin: 14px 0; }
+.soft-list { display: flex; flex-direction: column; gap: 6px; font-size: var(--fz-13); }
+.soft-list > div { padding: 8px 10px; border-left: 2px solid var(--border-strong); }
+.soft-list.is-confirm > div { border-left-color: var(--ok-500); background: var(--ok-50); }
+.soft-list.is-follow > div  { border-left-color: var(--info-500); background: var(--info-50); }
+
+.scroll-area { overflow-y: auto; }
+
+/* animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.running-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fz-11); font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--info-50), #E7F1FA, var(--info-50));
+  background-size: 200% 100%;
+  animation: shimmer 2.4s linear infinite;
+  color: var(--info-700);
+}
+.running-pill .spinner { border-color: var(--info-100, #BFDBF7); border-top-color: var(--info-500); width: 10px; height: 10px; border-width: 1.5px; }
+
+/* avatar helpers */
+.mini-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--brand-100); color: var(--brand-700);
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* dialog wide variant (for history overlay) */
+.dialog--wide { width: min(1100px, 94vw) !important; max-height: 86vh; display: flex; flex-direction: column; }
+.dialog--wide .dialog__body { flex: 1; overflow: auto; padding: 0; }
+.dialog--wide .dialog__head { padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.pd-back-btn { padding: 10px 16px 0; }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>/* ============================================================
+   DeepRare Prototype · mock data
+   ============================================================ */
+
+/* ---------- Hero patient · 吴建国, Wilson Disease ---------- */
+const HERO_PATIENT = {
+  id: "P-2024-0317",
+  name: "吴建国",
+  gender: "男",
+  age: 14,
+  dob: "2010-03-22",
+  ethnicity: "汉族",
+  familyHistory: "父母非近亲。叔叔 42 岁因肝硬化去世，外祖母肝病史不详。",
+  consanguinity: "否",
+  registeredAt: "2024-09-02",
+  lastVisitAt: "2025-01-14",
+  coreSymptoms: "构音障碍 · 震颤 · 肝酶升高 · K-F 环疑似",
+  hpoCount: 2,
+  vcfCount: 1,
+  status: "diagnosed", // completed
+  // timeline on profile
+  history: [
+    { date: "2023-11-08", title: "首次就诊 · 消化内科", meta: "肝酶异常 ALT 186, AST 122" },
+    { date: "2024-02-17", title: "神经内科会诊",      meta: "构音不清 6 个月, 手部震颤" },
+    { date: "2024-08-04", title: "眼科裂隙灯检查",   meta: "疑似 K-F 环 (双眼)" },
+    { date: "2024-09-02", title: "录入 DeepRare",    meta: "本账号录入" },
+    { date: "2024-11-21", title: "HPO 表型诊断",    meta: "Top 1 Wilson Disease 92.4%" },
+    { date: "2025-01-14", title: "VCF 基因诊断",    meta: "ATP7B 复合杂合 · 确诊" },
+  ],
+  presentText:
+`患者男性, 14 岁, 在校中学生。
+主诉: 言语不清 8 个月, 双手不自主震颤 5 个月, 加重 2 周。
+
+现病史:
+患者 8 个月前无明显诱因出现言语含糊, 同学察觉其说话"不清楚", 无饮水呛咳。5 个月前出现双手静止性震颤, 持物时明显, 写字变慢且字迹潦草。近 2 周震颤加重, 伴情绪易激惹, 上课注意力下降。无发热、抽搐、意识障碍。
+
+既往史:
+2023-11 体检发现 ALT 186 U/L, AST 122 U/L, 当地医院诊断"肝酶异常"予保肝治疗 3 月, 复查仍波动 (ALT 90-150)。乙肝、丙肝筛查阴性, 自身免疫肝炎抗体阴性。
+
+家族史:
+父母体健, 非近亲婚配。叔叔 42 岁于 5 年前因"肝硬化"去世, 具体病因不详。外祖母有不明原因肝病史。一姐姐 18 岁, 体健。
+
+体格检查:
+神清, 构音障碍 (缓慢、含糊), 双上肢静止性震颤 (右侧著), 指鼻试验欠稳准, 肌张力略高 (齿轮样, 右上肢)。腹软, 肝肋下 2 cm, 质中。
+
+辅助检查:
+血清铜蓝蛋白 0.08 g/L (正常 0.20-0.60)
+24h 尿铜 312 μg (正常 < 40)
+肝功: ALT 142 U/L, AST 98 U/L, 白蛋白 38 g/L
+眼科裂隙灯: 双眼角膜后弹力层铜色素沉积, 符合 K-F 环
+头颅 MRI: 双侧豆状核、丘脑对称性长 T2 信号, "大熊猫脸征"可见`
+};
+
+/* ---------- Patient list (10 rows, hero included) ---------- */
+const PATIENTS = [
+  {
+    id: "P-2024-0317", name: "吴建国", age: 14, gender: "男",
+    summary: "构音障碍 · 震颤 · 肝酶升高 · K-F 环",
+    hpoCount: 2, vcfCount: 1,
+    createdAt: "2024-09-02", lastAt: "2025-01-14",
+    status: "diagnosed"
+  },
+  {
+    id: "P-2024-0298", name: "李雅琪", age: 6, gender: "女",
+    summary: "发育迟缓 · 特殊面容 · 房间隔缺损",
+    hpoCount: 1, vcfCount: 0,
+    createdAt: "2024-08-21", lastAt: "2025-01-08",
+    status: "diagnosed"
+  },
+  {
+    id: "P-2025-0011", name: "陈思源", age: 3, gender: "男",
+    summary: "喂养困难 · 肌张力低下 · 新生儿筛查异常",
+    hpoCount: 1, vcfCount: 1,
+    createdAt: "2025-01-03", lastAt: "2025-01-15",
+    status: "running" // 正在诊断
+  },
+  {
+    id: "P-2024-0256", name: "张若彤", age: 22, gender: "女",
+    summary: "高个长指 · 晶状体脱位 · 主动脉根部扩张",
+    hpoCount: 2, vcfCount: 1,
+    createdAt: "2024-07-11", lastAt: "2024-12-28",
+    status: "diagnosed"
+  },
+  {
+    id: "P-2024-0244", name: "王浩然", age: 9, gender: "男",
+    summary: "进行性肌无力 · 腓肠肌肥大 · CK 显著升高",
+    hpoCount: 1, vcfCount: 0,
+    createdAt: "2024-06-30", lastAt: "2024-12-02",
+    status: "review"
+  },
+  {
+    id: "P-2024-0211", name: "林婉清", age: 31, gender: "女",
+    summary: "反复发作性腹痛 · 皮肤光敏感 · 尿液变红",
+    hpoCount: 2, vcfCount: 1,
+    createdAt: "2024-05-18", lastAt: "2024-11-09",
+    status: "diagnosed"
+  },
+  {
+    id: "P-2025-0018", name: "赵敏捷", age: 5, gender: "男",
+    summary: "反复感染 · 湿疹 · 血小板减少",
+    hpoCount: 1, vcfCount: 0,
+    createdAt: "2025-01-09", lastAt: "2025-01-15",
+    status: "running"
+  },
+  {
+    id: "P-2024-0189", name: "黄铭宇", age: 17, gender: "男",
+    summary: "夜盲 · 视野缩窄 · 视网膜色素沉着",
+    hpoCount: 1, vcfCount: 1,
+    createdAt: "2024-04-22", lastAt: "2024-10-15",
+    status: "diagnosed"
+  },
+  {
+    id: "P-2024-0167", name: "刘欣怡", age: 28, gender: "女",
+    summary: "反复骨折 · 蓝巩膜 · 听力下降",
+    hpoCount: 1, vcfCount: 0,
+    createdAt: "2024-03-14", lastAt: "2024-09-21",
+    status: "diagnosed"
+  },
+  {
+    id: "P-2024-0144", name: "周明哲", age: 42, gender: "男",
+    summary: "进行性痉挛步态 · 下肢僵硬",
+    hpoCount: 2, vcfCount: 0,
+    createdAt: "2024-02-26", lastAt: "2024-08-18",
+    status: "failed"
+  },
+];
+
+/* ---------- HPO diagnosis · Wilson Disease (完成) ---------- */
+const HPO_DIAG = {
+  completedAt: "2024-11-21 16:42",
+  duration: "4 分 12 秒",
+  model: "DeepRare-R1 · 2024-10",
+  hpoList: [
+    { id: "HP:0001300", label: "锥体外系症状 (震颤)" },
+    { id: "HP:0001260", label: "构音障碍" },
+    { id: "HP:0001397", label: "肝脂肪变性 / 肝酶升高" },
+    { id: "HP:0200136", label: "Kayser-Fleischer 环" },
+    { id: "HP:0002172", label: "伸展肢体僵硬" },
+    { id: "HP:0000718", label: "攻击行为", neg: true },
+  ],
+  top5: [
+    {
+      rank: 1, name: "Wilson Disease", nameCn: "肝豆状核变性",
+      omim: "OMIM:277900", orpha: "ORPHA:905",
+      match: 92.4, conf: 94, level: "high",
+      gene: "ATP7B", inherit: "AR",
+      summary: "铜代谢障碍, 累及肝、脑、角膜。青少年起病, ATP7B 基因突变。"
+    },
+    {
+      rank: 2, name: "Juvenile Huntington Disease", nameCn: "青少年亨廷顿病",
+      omim: "OMIM:143100",
+      match: 61.7, conf: 58, level: "mid",
+      gene: "HTT", inherit: "AD",
+      summary: "CAG 重复扩张引起的神经退行性病变, 运动症状先于认知改变。"
+    },
+    {
+      rank: 3, name: "PKAN (NBIA1)", nameCn: "泛酸激酶相关性神经变性",
+      omim: "OMIM:234200",
+      match: 48.2, conf: 52, level: "mid",
+      gene: "PANK2", inherit: "AR",
+      summary: "基底节铁沉积, 肌张力障碍, 构音障碍, 眼底视网膜色素变性。"
+    },
+    {
+      rank: 4, name: "Niemann-Pick Type C", nameCn: "尼曼匹克 C 型",
+      omim: "OMIM:257220",
+      match: 39.6, conf: 44, level: "mid",
+      gene: "NPC1", inherit: "AR",
+      summary: "溶酶体储积症, 垂直核上性眼肌麻痹, 脾肿大, 构音障碍。"
+    },
+    {
+      rank: 5, name: "Dopa-Responsive Dystonia", nameCn: "多巴反应性肌张力障碍",
+      omim: "OMIM:128230",
+      match: 27.3, conf: 31, level: "low",
+      gene: "GCH1", inherit: "AD",
+      summary: "日间波动性肌张力障碍, 低剂量左旋多巴显著有效。"
+    }
+  ],
+  // Top 1 match detail
+  top1Match: [
+    { criterion: "肝豆状核变性 Leipzig 标准 · K-F 环",      phenotype: "Kayser-Fleischer 环 (HP:0200136)", hit: true, patient: "眼科裂隙灯确认双眼 K-F 环",           ref: "[1]" },
+    { criterion: "血清铜蓝蛋白 < 0.10 g/L",             phenotype: "低铜蓝蛋白血症 (HP:0004364)",       hit: true, patient: "0.08 g/L",                              ref: "[1,2]" },
+    { criterion: "24 小时尿铜 > 100 μg",               phenotype: "尿铜增高 (HP:0003155)",             hit: true, patient: "312 μg / 24h",                          ref: "[1]" },
+    { criterion: "肝脏受累: 转氨酶升高或肝硬化表现",    phenotype: "肝酶升高 (HP:0001397)",             hit: true, patient: "ALT 142, AST 98, 病程 > 12 月",          ref: "[3]" },
+    { criterion: "神经系统症状: 锥体外系/构音障碍",      phenotype: "构音障碍 (HP:0001260) · 震颤 (HP:0001300)", hit: true, patient: "静止性震颤 + 构音障碍 5-8 月", ref: "[1,4]" },
+    { criterion: "头颅 MRI: 豆状核对称病灶",            phenotype: "基底节异常信号 (HP:0002134)",       hit: true, patient: "双侧豆状核、丘脑对称长 T2, 大熊猫脸征",    ref: "[5]" },
+    { criterion: "家族史提示常染色体隐性",              phenotype: "阳性家族史 (HP:0001425)",           hit: "partial", patient: "叔叔 42 岁肝硬化去世, 具体病因未明",   ref: "[1]" },
+    { criterion: "血清铜 < 70 μg/dL",                  phenotype: "低血清铜",                           hit: "unknown", patient: "检查未完成",                          ref: "—" },
+    { criterion: "溶血性贫血 (急性发作期)",             phenotype: "溶血性贫血 (HP:0001878)",           hit: false, patient: "Hb 128 g/L, 未见溶血",                   ref: "[1]" },
+  ],
+  evidence: {
+    clinical: [
+      { text: "8 个月病程的构音不清合并 5 个月的静止性震颤, 符合 Wilson Disease 典型青少年起病神经型表现。", cite: "[4]" },
+      { text: "腹部查体肝脏肋下 2 cm, 结合长期肝酶升高, 提示肝脏亚临床受累。", cite: "[3]" },
+    ],
+    lab: [
+      { text: "血清铜蓝蛋白 0.08 g/L, 显著低于诊断阈值 0.20 g/L。", cite: "[1]" },
+      { text: "24 小时尿铜 312 μg, 超过 100 μg 诊断切点近 3 倍。", cite: "[1,2]" },
+      { text: "肝酶反复升高 (ALT 90-186), 自免与病毒性肝炎筛查阴性, 排除常见鉴别。", cite: "[3]" }
+    ],
+    therapy: [
+      { text: "患者当前未启用铜螯合治疗, 建议启动 D-青霉胺 或 曲恩汀 试验性治疗, 同时观察神经症状变化。", cite: "[6]" }
+    ],
+    molecular: [
+      { text: "临床 Leipzig 评分 ≥ 4 分已可确诊; 推荐 ATP7B 基因测序确认突变类型, 为家族筛查与治疗方案选择提供依据。", cite: "[1,7]" }
+    ],
+    overall: "综合 K-F 环、铜蓝蛋白、尿铜、头颅 MRI 四项硬指标阳性, Leipzig 评分 ≥ 6 分, 诊断 Wilson Disease 证据充分, 建议立即启动去铜治疗并完善 ATP7B 分子诊断。"
+  },
+  // 鉴别诊断 (Top 1 ↔ 其他)
+  diff: [
+    { feature: "起病年龄", wilson: "5-35 岁 (典型青少年)", alt: "青少年 HD 多 < 20 岁; PKAN 10 岁前", note: "Wilson 与 PKAN 区间重叠" },
+    { feature: "K-F 环",   wilson: "神经型 > 95% 阳性",     alt: "HD / PKAN / NPC 均阴性",            note: "强鉴别特征" },
+    { feature: "铜蓝蛋白", wilson: "降低",                 alt: "其他疾病正常",                      note: "—" },
+    { feature: "头颅 MRI", wilson: "豆状核、丘脑对称病灶, 大熊猫脸", alt: "HD: 尾状核萎缩; PKAN: 苍白球虎眼征", note: "影像差异明显" },
+    { feature: "家族遗传", wilson: "AR",                   alt: "HD 为 AD; PKAN AR",                  note: "家族史倾向 AR" },
+  ],
+  recommendedTests: {
+    confirm: [
+      "ATP7B 基因全外显子 + CNV 检测 (确诊)",
+      "24h 尿铜 + 青霉胺负荷试验",
+      "肝活检 (肝铜定量, 必要时)",
+    ],
+    followup: [
+      "肝功、血铜、尿铜 每 3 月",
+      "头颅 MRI + 神经功能评分 每 6-12 月",
+      "眼科裂隙灯 每 12 月",
+    ]
+  },
+  similarCases: [
+    { id: "Case A · Lancet 2019",    brief: "14 岁男性, 构音障碍 + 肝酶升高, K-F 环阳性, ATP7B c.2333G>T / c.2975C>T 复合杂合。", match: 88 },
+    { id: "Case B · Hepatology 2021", brief: "12 岁女性, 神经症状先发, 铜蓝蛋白 0.07, 对青霉胺治疗反应良好。", match: 82 },
+    { id: "Case C · JIMD 2020",      brief: "16 岁男性, 大熊猫脸征典型, 家族中叔叔 40 岁死于肝硬化。", match: 79 }
+  ],
+  mdt: [
+    { dept: "神经内科", reason: "评估锥体外系症状严重程度及用药方案" },
+    { dept: "消化/肝病科", reason: "肝功能分期, 肝纤维化评估" },
+    { dept: "遗传咨询门诊", reason: "ATP7B 阳性后家系筛查与生育指导" },
+    { dept: "眼科", reason: "随访 K-F 环消退情况作为治疗反应指标" },
+  ],
+  references: [
+    { n: 1, text: "EASL Clinical Practice Guidelines: Wilson's Disease. J Hepatol. 2012;56(3):671-685." },
+    { n: 2, text: "Roberts EA, Schilsky ML. Diagnosis and treatment of Wilson disease. Hepatology 2008;47(6):2089-2111." },
+    { n: 3, text: "Schilsky ML. Liver transplantation for Wilson's disease. Ann N Y Acad Sci. 2014;1315:45-49." },
+    { n: 4, text: "Lorincz MT. Neurologic Wilson's Disease. Ann N Y Acad Sci. 2010;1184:173-187." },
+    { n: 5, text: "Prashanth LK et al. Wilson's disease: diagnostic errors and clinical implications. J Neurol Neurosurg Psychiatry. 2004;75(6):907-909." },
+    { n: 6, text: "Weiss KH et al. Efficacy and safety of trientine in Wilson disease. Clin Gastroenterol Hepatol. 2013." },
+    { n: 7, text: "Coffey AJ et al. A genetic study of Wilson's disease in the United Kingdom. Brain. 2013;136(Pt 5):1476-1487." },
+  ]
+};
+
+/* ---------- HPO diagnosis · running (page D) ---------- */
+const HPO_RUNNING = {
+  stage1: {
+    messages: [
+      { from: "ai", text: "您好, 我是 DeepRare 诊断助手。根据您输入的病历, 患者主诉为构音障碍与震颤。能否告诉我症状出现的先后顺序?", refs: [] },
+      { from: "user", text: "构音障碍先出现, 约 8 个月前; 震颤是 5 个月后出现的。" },
+      { from: "ai", text: "明白。震颤属于静止性还是动作性?是否在握物时加重?", refs: [] },
+      { from: "user", text: "静止时可见, 写字或拿筷子时更明显。" },
+      { from: "ai", text: "请问患者是否接受过眼科裂隙灯检查?角膜周围是否存在棕色色素环 (K-F 环)?", refs: [{ n: 1, label: "EASL Guidelines 2012" }] },
+      { from: "user", text: "眼科看过, 报告写疑似 K-F 环。" },
+    ],
+    suggestions: [
+      "是否伴有情绪或行为改变?",
+      "家族中是否有不明原因肝病史?",
+      "既往肝功能检查的具体数值?",
+    ]
+  },
+  stage2: {
+    extracted: [
+      { id: "HP:0001300", label: "锥体外系症状 (震颤)", source: "AI 提取" },
+      { id: "HP:0001260", label: "构音障碍",            source: "AI 提取" },
+      { id: "HP:0001397", label: "肝脂肪变性 / 肝酶升高", source: "AI 提取" },
+      { id: "HP:0200136", label: "Kayser-Fleischer 环",  source: "医生补充" },
+      { id: "HP:0002172", label: "伸展肢体僵硬",        source: "AI 提取" },
+      { id: "HP:0000718", label: "攻击行为", neg: true, source: "医生否定" },
+    ]
+  },
+  stage3: {
+    startedAt: "2025-01-15 10:04:22",
+    steps: [
+      { key: "plan",     label: "构建方案",              status: "done", meta: "已加载 3 项诊断策略", t: "00:03" },
+      { key: "evidence", label: "证据检索",              status: "done", meta: "命中 128 篇相关文献 · 92 条临床指南", t: "00:21" },
+      { key: "round1",   label: "第 1 轮诊断 · 初步 + 鉴别", status: "done", meta: "生成 12 个候选, 收敛至 7 个", t: "00:58" },
+      { key: "round2",   label: "第 2 轮诊断 · 初步 + 鉴别", status: "done", meta: "引入实验室线索, 收敛至 5 个", t: "01:44" },
+      { key: "round3",   label: "第 3 轮诊断 · 初步 + 鉴别", status: "running", meta: "正在比对 K-F 环 + 铜代谢证据 · 17 / 24 已处理", t: "02:36" },
+      { key: "final",    label: "最终诊断",              status: "queue", meta: "等待第 3 轮收敛", t: "—" },
+    ],
+    liveLog: [
+      { t: "02:28", text: "匹配 OMIM:277900 Wilson Disease — Leipzig 评分 6/8" },
+      { t: "02:30", text: "排除 OMIM:128230 Dopa-Responsive Dystonia — 无日间波动" },
+      { t: "02:33", text: "调用 HPO 本体 v2024-10, 计算语义相似度 (Resnik)" },
+      { t: "02:36", text: "K-F 环阳性 → Wilson Disease 权重 +0.18" },
+    ]
+  }
+};
+
+/* ---------- VCF results (Wilson Disease, ATP7B) ---------- */
+const VCF_RESULT = {
+  completedAt: "2025-01-14 21:18",
+  summary: { total: 48923, filtered: 214, path: 2, likelyPath: 1, vus: 6 },
+  steps: [
+    { label: "变异导入",       value: "48,923", meta: "WES VCF · GRCh38" },
+    { label: "过滤",           value: "214",    meta: "MAF<1% · 外显子/剪接区" },
+    { label: "候选",           value: "9",      meta: "AR/AD 匹配 HPO" },
+    { label: "致病 / 可能致病", value: "3",     meta: "ACMG P + LP" },
+  ],
+  primary: [
+    {
+      id: "v1",
+      acmg: "P", gene: "ATP7B", chrom: "13q14.3", pos: "chr13:51,932,872",
+      transcript: "NM_000053.4", cdna: "c.2333G>T", protein: "p.Arg778Leu",
+      type: "missense", rsid: "rs28942074", zygosity: "het",
+      ad: "48 / 92 (0.52)", sift: "0.00 D", polyphen: "1.00 D", cadd: "32",
+      criteria: [
+        { code: "PS1", weight: 4, hit: true,  rationale: "p.Arg778Leu 所在氨基酸位点 p.Arg778Gln 已在 ClinVar 被归类为 Pathogenic，同一氨基酸位点的新变异符合 PS1。", ref: "ClinVar RCV000057290; Thomas 1995" },
+        { code: "PM1", weight: 2, hit: true,  rationale: "变异位于 ATP7B 跨膜结构域 TM4，为铜离子运输功能热点区域。", ref: "UniProt P35670" },
+        { code: "PM2", weight: 2, hit: true,  rationale: "gnomAD v4.1 东亚人群等位基因频率 0.0008%，显著低于 AR 疾病预期频率·0.5%。", ref: "gnomAD v4.1" },
+        { code: "PM5", weight: 2, hit: true,  rationale: "同一密码子的 p.Arg778Gln / p.Arg778Gly 已报道为致病，是 Wilson 病东亚人群热点位点。", ref: "ClinVar; Gu 2003" },
+        { code: "PP3", weight: 1, hit: true,  rationale: "SIFT 0.00 · PolyPhen-2 1.00 · CADD 32 · REVEL 0.89 · SpliceAI 0.02，维护多工具一致提示有害。", ref: "—" },
+        { code: "PP5", weight: 1, hit: false, rationale: "ClinVar 仅为 one-star，评审证据等级未达 PP5 所要求的 reviewed-by-expert-panel。", ref: "ClinVar" },
+        { code: "BS1", weight: -4, hit: false, rationale: "群体频率不支持良性 (低于 AR 阀值)，BS1 不触发。", ref: "—" },
+      ],
+      predictions: [
+        { tool: "SIFT",      score: "0.00",  label: "Deleterious" },
+        { tool: "PolyPhen-2",score: "1.000", label: "Probably damaging" },
+        { tool: "CADD",      score: "32",    label: "Top 0.1%" },
+        { tool: "REVEL",     score: "0.89",  label: "High pathogenicity" },
+        { tool: "SpliceAI",  score: "0.02",  label: "No splicing impact" },
+      ],
+      literature: [
+        { n: 1, text: "Thomas GR et al. The Wilson disease gene: spectrum of mutations. Nat Genet. 1995;9(2):210-217. (p.Arg778Leu 为东亚最常见突变, 频率 ~30%)" },
+        { n: 2, text: "Gu YH et al. ATP7B gene mutations in 29 families with Wilson's disease. J Hum Genet. 2003;48(7):345-353." },
+      ],
+      geneInfo: "ATP7B 编码铜转运 P 型 ATP 酶, 主要在肝细胞表达, 负责将铜整合到铜蓝蛋白并排入胆汁。功能缺失导致肝、脑铜沉积。",
+      expanded: true
+    },
+    {
+      id: "v2",
+      acmg: "P", gene: "ATP7B", chrom: "13q14.3", pos: "chr13:51,938,049",
+      transcript: "NM_000053.4", cdna: "c.3443T>C", protein: "p.Ile1148Thr",
+      type: "missense", rsid: "rs121907998", zygosity: "het",
+      ad: "52 / 104 (0.50)", sift: "0.00 D", polyphen: "0.98 D", cadd: "29"
+    },
+    {
+      id: "v3",
+      acmg: "LP", gene: "ATP7B", chrom: "13q14.3", pos: "chr13:51,934,461",
+      transcript: "NM_000053.4", cdna: "c.2621C>T", protein: "p.Ala874Val",
+      type: "missense", rsid: "rs201038679", zygosity: "het",
+      ad: "41 / 82 (0.50)", sift: "0.01 D", polyphen: "0.94 D", cadd: "26"
+    },
+    {
+      id: "v4",
+      acmg: "VUS", gene: "COMMD1", chrom: "2p15", pos: "chr2:62,136,780",
+      transcript: "NM_152516.4", cdna: "c.158A>G", protein: "p.Gln53Arg",
+      type: "missense", rsid: "rs773891", zygosity: "het",
+      ad: "30 / 71 (0.42)", sift: "0.12 T", polyphen: "0.45 B", cadd: "18"
+    }
+  ],
+  secondary: [
+    { id: "s1", acmg: "LP",  gene: "MYBPC3", chrom: "11p11.2", pos: "chr11:47,354,220", transcript: "NM_000256.3", cdna: "c.1504C>T", protein: "p.Arg502Trp", type: "missense",  rsid: "rs397515963", zygosity: "het",  ad: "37 / 78 (0.47)", sift: "0.00 D", polyphen: "0.99 D", cadd: "28" },
+    { id: "s2", acmg: "VUS", gene: "BRCA2",  chrom: "13q13.1", pos: "chr13:32,340,200", transcript: "NM_000059.4", cdna: "c.5909C>G", protein: "p.Ala1970Gly", type: "missense", rsid: "—",          zygosity: "het",  ad: "29 / 60 (0.48)", sift: "0.08 T", polyphen: "0.62 P", cadd: "22" }
+  ],
+  other: [
+    { id: "o1", acmg: "LB", gene: "APOE",   chrom: "19q13.32", pos: "chr19:44,908,684", transcript: "NM_000041.4", cdna: "c.388T>C", protein: "p.Cys130Arg", type: "missense", rsid: "rs429358", zygosity: "het",  ad: "55 / 108 (0.51)", sift: "0.34 T", polyphen: "0.12 B", cadd: "14" },
+    { id: "o2", acmg: "B",  gene: "MTHFR",  chrom: "1p36.22",  pos: "chr1:11,856,378",  transcript: "NM_005957.5", cdna: "c.665C>T", protein: "p.Ala222Val", type: "missense", rsid: "rs1801133", zygosity: "hom", ad: "86 / 88 (0.98)", sift: "0.52 T", polyphen: "0.08 B", cadd: "11" }
+  ]
+};
+
+/* ---------- History records (page F) ---------- */
+const HISTORY = [
+  { id: "H-007", type: "VCF", startedAt: "2025-01-14 20:36", duration: "42 分 18 秒", status: "done",    summary: "ATP7B 复合杂合 (c.2333G>T / c.3443T>C), 确诊 Wilson Disease" },
+  { id: "H-006", type: "HPO", startedAt: "2024-11-21 16:38", duration: "4 分 12 秒",  status: "done",    summary: "Top 1 Wilson Disease 匹配度 92.4%, 置信度 94/100" },
+  { id: "H-005", type: "HPO", startedAt: "2024-10-08 11:02", duration: "3 分 48 秒",  status: "done",    summary: "Top 1 Juvenile HD 61%, 建议补充 K-F 环检查" },
+  { id: "H-004", type: "VCF", startedAt: "2024-09-12 14:22", duration: "—",           status: "failed",  summary: "VCF 文件 chromosome 命名不匹配, 已终止" },
+  { id: "H-003", type: "HPO", startedAt: "2024-09-02 09:18", duration: "2 分 51 秒",  status: "done",    summary: "初诊提示铜代谢障碍, 建议完善铜蓝蛋白检查" },
+  { id: "H-002", type: "HPO", startedAt: "2024-08-15 15:44", duration: "—",           status: "running", summary: "由医生手动终止" },
+];
+
+/* ---------- Expose ---------- */
+Object.assign(window, {
+  HERO_PATIENT, PATIENTS, HPO_DIAG, HPO_RUNNING, VCF_RESULT, HISTORY
+});
+</script>
+<script type="text/babel">/* global */
+const IconSearch = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+    <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="m11 11 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+const IconPlus = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>);
+const IconChevron = () => (<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="m4 3 4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const IconFilter = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 8h6M7 12h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>);
+const IconDownload = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const IconUpload = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L8 8m4-4 4 4M4 18h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const IconWarning = () => (<svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 3 2 17h16L10 3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M10 8v4m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>);
+const IconInfo = () => (<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4"/><path d="M8 7v4M8 5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>);
+const IconCheck = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="m3 8 3.5 3.5L13 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const IconX = () => (<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m3 3 6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>);
+const IconDna = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2c0 3 8 5 8 8s-8 2-8 5M12 2c0 3-8 5-8 8s8 2 8 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M5.5 5h5M5.5 8h5M5.5 11h5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity=".5"/></svg>);
+const IconFile = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2h6l4 4v8H3V2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M9 2v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>);
+const IconSettings = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.5"/><path d="M8 2v2M8 12v2M14 8h-2M4 8H2M12.2 3.8l-1.4 1.4M5.2 10.8l-1.4 1.4M12.2 12.2l-1.4-1.4M5.2 5.2 3.8 3.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>);
+const IconSend = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="m2 8 12-6-5 12-2-5-5-1Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>);
+const IconTrash = () => (<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const IconBeaker = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 2h4v4l3 7a1 1 0 0 1-.9 1.5H3.9A1 1 0 0 1 3 13l3-7V2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>);
+const IconUser = () => (<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M3 14c.5-2.5 2.5-4 5-4s4.5 1.5 5 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>);
+
+Object.assign(window, {
+  IconSearch, IconPlus, IconChevron, IconFilter, IconDownload, IconUpload,
+  IconWarning, IconInfo, IconCheck, IconX, IconDna, IconFile, IconSettings,
+  IconSend, IconTrash, IconBeaker, IconUser
+});
+</script>
+<script type="text/babel">/* global React */
+const { useState } = React;
+
+const Btn = ({ variant = "secondary", size, icon, children, ...p }) => (
+  <button className={`btn btn--${variant}${size ? " btn--" + size : ""}`} {...p}>
+    {icon}{children}
+  </button>
+);
+
+const Badge = ({ tone = "neutral", dot, pill, children }) => {
+  const cls = ["badge"];
+  if (pill) cls.push("badge--pill");
+  if (dot) cls.push("badge--dot");
+  const toneMap = { brand:"soft-brand", ok:"soft-ok", warn:"soft-warn", err:"soft-err", info:"soft-info", outline:"outline" };
+  if (toneMap[tone]) cls.push(`badge--${toneMap[tone]}`);
+  return <span className={cls.join(" ")}>{children}</span>;
+};
+
+const Acmg = ({ k }) => {
+  const map = { P:["p","P"], LP:["lp","LP"], VUS:["vus","VUS"], LB:["lb","LB"], B:["b","B"] };
+  const [cls, label] = map[k] || ["vus","VUS"];
+  return <span className={`acmg acmg--${cls}`}>{label}</span>;
+};
+
+const Hpo = ({ id, label, neg, removable = true }) => (
+  <span className={`hpo${neg ? " hpo--neg" : ""}`}>
+    <span className="hpo__id">{id}</span>
+    <span className="hpo__label">{label}</span>
+    {removable && <span className="hpo__x"><IconX/></span>}
+  </span>
+);
+
+const StatusDot = ({ kind = "queue", children }) => (
+  <span className={`status status--${kind}`}>
+    <span className="status__dot"/>{children}
+  </span>
+);
+
+const Progress = ({ value = 40, tone, size, striped }) => {
+  const cls = ["progress"];
+  if (tone) cls.push(`progress--${tone}`);
+  if (size) cls.push(`progress--${size}`);
+  if (striped) cls.push("progress--striped");
+  return <div className={cls.join(" ")}><div className="progress__fill" style={{width: `${value}%`}}/></div>;
+};
+
+const MatchBar = ({ value }) => (
+  <div className="match-bar">
+    <div className="match-bar__track"><div className="match-bar__fill" style={{width:`${value}%`}}/></div>
+    <span className="match-bar__val">{value.toFixed(1)}%</span>
+  </div>
+);
+
+const Conf = ({ value, level }) => (
+  <span className={`conf conf--${level}`}>
+    <span className="conf__bar"><span className="conf__fill" style={{width: `${value}%`}}/></span>
+    {value}
+  </span>
+);
+
+const Rank = ({ n }) => <span className={`rank rank--${n <= 3 ? n : 0}`}>{n}</span>;
+
+const Alert = ({ tone = "info", title, children, icon }) => (
+  <div className={`alert alert--${tone}`}>
+    <div className="alert__icon">{icon || <IconInfo/>}</div>
+    <div className="alert__body">
+      {title && <div className="alert__title">{title}</div>}
+      <div className="alert__desc">{children}</div>
+    </div>
+  </div>
+);
+
+const Tabs = ({ items, active, onChange }) => (
+  <div className="tabs">
+    {items.map(it => (
+      <button key={it.key}
+        className={`tabs__item${it.key === active ? " is-active" : ""}`}
+        onClick={() => onChange && onChange(it.key)}>
+        {it.icon}{it.label}
+        {it.count != null && <span className="count">{it.count}</span>}
+      </button>
+    ))}
+  </div>
+);
+
+const Segmented = ({ items, active, onChange }) => (
+  <div className="segmented">
+    {items.map(it => (
+      <button key={it.key}
+        className={`segmented__item${it.key === active ? " is-active" : ""}`}
+        onClick={() => onChange && onChange(it.key)}>
+        {it.label}
+      </button>
+    ))}
+  </div>
+);
+
+const Field = ({ label, hint, error, required, children }) => (
+  <label className="field">
+    <span className="field__label">{label}{required && <span className="req">*</span>}</span>
+    {children}
+    {hint && !error && <span className="field__hint">{hint}</span>}
+    {error && <span className="field__error">{error}</span>}
+  </label>
+);
+
+Object.assign(window, { Btn, Badge, Acmg, Hpo, StatusDot, Progress, MatchBar, Conf, Rank, Alert, Tabs, Segmented, Field });
+</script>
+<script type="text/babel">/* global React, Btn, Badge, Acmg, Hpo, StatusDot, Progress, MatchBar, Conf, Rank, Alert, Tabs, Segmented, Field,
+   IconSearch, IconPlus, IconChevron, IconFilter, IconDownload, IconUpload, IconWarning, IconInfo, IconCheck, IconX,
+   IconDna, IconFile, IconSettings, IconSend, IconTrash, IconBeaker, IconUser,
+   HERO_PATIENT, PATIENTS, HPO_DIAG, HPO_RUNNING, VCF_RESULT, HISTORY */
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ============================================================
+   AppShell · top nav + routing
+   ============================================================ */
+function AppShell({ route, setRoute, children }) {
+  const nav = [
+    { key: "new",  label: "新建诊断" },
+    { key: "list", label: "患者列表" },
+  ];
+  const isPatient = route.view === "patient";
+  return (
+    <div className="shell">
+      <header className="shell__bar">
+        <div className="shell__logo">
+          <span className="shell__logo-mark">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M4 2c0 3 8 5 8 8s-8 2-8 5M12 2c0 3-8 5-8 8s8 2 8 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          </span>
+          DeepRare
+          <span className="shell__logo-tag">CLINICAL</span>
+        </div>
+        <nav className="shell__nav">
+          {nav.map(n => (
+            <button key={n.key}
+              className={(route.view === n.key || (n.key === "list" && isPatient)) ? "is-active" : ""}
+              onClick={() => setRoute({ view: n.key })}>
+              {n.label}
+            </button>
+          ))}
+        </nav>
+        <div className="shell__right">
+          <button className="btn btn--ghost btn--sm"><IconSettings/></button>
+          <div className="shell__avatar">WC</div>
+        </div>
+      </header>
+      <main className="shell__content">{children}</main>
+    </div>
+  );
+}
+
+/* ============================================================
+   Page A · 新建诊断
+   ============================================================ */
+function PageNewDiag({ setRoute }) {
+  const [tab, setTab] = useState("hpo");
+  const [selected, setSelected] = useState(null);      // existing patient
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [text, setText] = useState("");
+  const [form, setForm] = useState({
+    name: "", gender: "", age: "", dob: "", ethnicity: "", family: "", consang: "否",
+  });
+
+  const matches = useMemo(() => {
+    if (!query) return PATIENTS.slice(0, 5);
+    const q = query.toLowerCase();
+    return PATIENTS.filter(p =>
+      p.name.includes(query) || p.id.toLowerCase().includes(q) || p.summary.toLowerCase().includes(q)
+    ).slice(0, 6);
+  }, [query]);
+
+  const onPickPatient = (p) => {
+    setSelected(p);
+    setSearchOpen(false);
+    setQuery("");
+    if (p.id === HERO_PATIENT.id) {
+      setForm({
+        name: HERO_PATIENT.name, gender: HERO_PATIENT.gender, age: String(HERO_PATIENT.age),
+        dob: HERO_PATIENT.dob, ethnicity: HERO_PATIENT.ethnicity,
+        family: HERO_PATIENT.familyHistory, consang: HERO_PATIENT.consanguinity,
+      });
+    } else {
+      setForm({
+        name: p.name, gender: p.gender, age: String(p.age),
+        dob: "—", ethnicity: "—", family: "—", consang: "否",
+      });
+    }
+  };
+  const clearSelected = () => { setSelected(null); setForm({ name: "", gender: "", age: "", dob: "", ethnicity: "", family: "", consang: "否" }); };
+
+  const submit = () => {
+    // jump to hero patient detail
+    setRoute({ view: "patient", id: HERO_PATIENT.id, tab: tab, sub: tab === "hpo" ? "running" : "done" });
+  };
+
+  const isReadonly = !!selected;
+
+  return (
+    <>
+      <div className="page-head page-head--compact">
+        <div>
+          <h1>新建诊断</h1>
+          <div className="desc">选择已有患者或创建新患者，填写诊断输入后即可发起 AI 推理。</div>
+        </div>
+        <div className="flex gap-2">
+          <Btn variant="ghost" size="sm">保存草稿</Btn>
+        </div>
+      </div>
+
+      <div className="page-body">
+        <div className="newdiag">
+          <div className="newdiag__card">
+
+            {/* Tabs */}
+            <div className="newdiag__tabs">
+              <button className={"newdiag__tab" + (tab === "hpo" ? " is-active" : "")} onClick={() => setTab("hpo")}>
+                <IconUser/> HPO 表型诊断 <span className="muted">基于症状文本</span>
+              </button>
+              <button className={"newdiag__tab" + (tab === "vcf" ? " is-active" : "")} onClick={() => setTab("vcf")}>
+                <IconDna/> VCF 基因诊断 <span className="muted">.vcf / .vcf.gz</span>
+              </button>
+            </div>
+
+            {/* Section 1: patient */}
+            <div className="newdiag__section">
+              <div className="newdiag__section-head">
+                <div className="newdiag__section-title"><span className="n">1</span>患者选择</div>
+                <div className="newdiag__section-hint">不选择患者直接提交，将自动创建新患者档案</div>
+              </div>
+
+              {!selected && (
+                <div className="p-search" onBlur={() => setTimeout(() => setSearchOpen(false), 150)}>
+                  <div className="input-wrap">
+                    <span className="input-wrap__icon"><IconSearch/></span>
+                    <input className="input" placeholder="按姓名或患者 ID 搜索已有患者..."
+                      value={query}
+                      onFocus={() => setSearchOpen(true)}
+                      onChange={e => { setQuery(e.target.value); setSearchOpen(true); }}/>
+                  </div>
+                  {searchOpen && (
+                    <div className="p-search__drop">
+                      {matches.map(p => (
+                        <div key={p.id} className="p-search__item" onMouseDown={() => onPickPatient(p)}>
+                          <div className="p-search__item-avatar">{p.name.slice(-1)}</div>
+                          <div>
+                            <div style={{fontWeight: 600}}>{p.name} <span style={{color:"var(--text-4)", fontWeight:400, marginLeft:4, fontSize:"var(--fz-12)"}}>{p.gender} · {p.age}岁</span></div>
+                            <div style={{fontSize:"var(--fz-11)", color:"var(--text-4)"}}>{p.summary}</div>
+                          </div>
+                          <span className="p-search__item-meta">{p.id}</span>
+                        </div>
+                      ))}
+                      <div className="p-search__create" onMouseDown={() => setSearchOpen(false)}>
+                        <IconPlus/> 未找到？提交时自动创建新患者
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selected && (
+                <div className="selected-patient">
+                  <div className="selected-patient__avatar">{selected.name.slice(-1)}</div>
+                  <div>
+                    <div className="selected-patient__name">{selected.name}</div>
+                    <div className="selected-patient__meta">{selected.id} · {selected.gender} · {selected.age}岁 · HPO {selected.hpoCount} · VCF {selected.vcfCount}</div>
+                  </div>
+                  <div className="selected-patient__right">
+                    <Badge tone="brand" dot>已选择 · 档案预填</Badge>
+                    <Btn variant="ghost" size="sm" onClick={clearSelected}>切换</Btn>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Section 2: inputs */}
+            <div className={"newdiag__section" + (isReadonly ? " readonly" : "")}>
+              <div className="newdiag__section-head">
+                <div className="newdiag__section-title">
+                  <span className="n">2</span>
+                  {tab === "hpo" ? "患者信息 & 病史" : "患者信息 & 病史 & VCF 文件"}
+                </div>
+                {isReadonly && <div className="newdiag__section-hint">基本信息已预填，仅下方病史可追加</div>}
+              </div>
+
+              <div className="form-grid">
+                <Field label="姓名" required>
+                  <input className="input" value={form.name} readOnly={isReadonly} onChange={e=>setForm({...form, name:e.target.value})} placeholder="如: 张三"/>
+                </Field>
+                <Field label="性别" required>
+                  <select className="select" value={form.gender} disabled={isReadonly} onChange={e=>setForm({...form, gender:e.target.value})}>
+                    <option value="">请选择</option>
+                    <option>男</option><option>女</option>
+                  </select>
+                </Field>
+                <Field label="年龄">
+                  <input className="input" value={form.age} readOnly={isReadonly} onChange={e=>setForm({...form, age:e.target.value})} placeholder="例如 14"/>
+                </Field>
+                <Field label="出生日期">
+                  <input className="input" value={form.dob} readOnly={isReadonly} onChange={e=>setForm({...form, dob:e.target.value})} placeholder="YYYY-MM-DD"/>
+                </Field>
+                <Field label="民族 / 族裔">
+                  <input className="input" value={form.ethnicity} readOnly={isReadonly} onChange={e=>setForm({...form, ethnicity:e.target.value})} placeholder="如: 汉族"/>
+                </Field>
+                <Field label="近亲婚配史">
+                  <select className="select" value={form.consang} disabled={isReadonly} onChange={e=>setForm({...form, consang:e.target.value})}>
+                    <option>否</option><option>是</option><option>不详</option>
+                  </select>
+                </Field>
+                <div className="field field--wide">
+                  <label className="field__label">家族史</label>
+                  <textarea className="textarea" rows="2" value={form.family} readOnly={isReadonly} onChange={e=>setForm({...form, family:e.target.value})} placeholder="有无类似疾病患者、近亲婚配、新生儿死亡、晚发肝病等"/>
+                </div>
+
+                <div className="field field--wide">
+                  <label className="field__label">
+                    病史文本 <span className="req">*</span>
+                    {isReadonly && <span style={{marginLeft:8, fontWeight:400, color:"var(--text-4)", fontSize:"var(--fz-11)"}}>历史病史已保留，可在下方追加新内容</span>}
+                  </label>
+                  {isReadonly && (
+                    <div style={{padding:"10px 12px", background:"var(--n-50)", border:"1px solid var(--border)", borderRadius:"var(--r-3)", marginBottom:8, fontSize:"var(--fz-12)", color:"var(--text-2)", lineHeight:1.55, whiteSpace:"pre-line", maxHeight:160, overflow:"auto"}}>
+                      {selected.id === HERO_PATIENT.id ? HERO_PATIENT.presentText.slice(0, 300) + "..." : "(历史病史摘要) " + selected.summary}
+                    </div>
+                  )}
+                  <textarea className="textarea" rows={isReadonly ? 4 : 8}
+                    placeholder={isReadonly ? "追加此次就诊新症状、检查结果..." : "支持粘贴完整病历。可包含主诉、现病史、既往史、体格检查、辅助检查..."}
+                    value={text} onChange={e=>setText(e.target.value)}/>
+                </div>
+
+                {tab === "vcf" && (
+                  <div className="field field--wide">
+                    <label className="field__label">VCF 文件 <span className="req">*</span></label>
+                    <div className="upload">
+                      <div className="upload__icon"><IconUpload/></div>
+                      <div className="upload__title">拖拽或点击上传 VCF 文件</div>
+                      <div className="upload__hint">支持 .vcf / .vcf.gz · 单文件 ≤ 2 GB · 参考基因组 GRCh38 / GRCh37</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="newdiag__section" style={{display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg-sunken)"}}>
+              <div style={{fontSize:"var(--fz-12)", color:"var(--text-3)"}}>
+                <IconInfo/> 提交后 AI 推理将在 2–5 分钟内完成，可前往患者详情页查看进度。
+              </div>
+              <div className="flex gap-2">
+                <Btn variant="ghost">取消</Btn>
+                <Btn variant="primary" onClick={submit}>
+                  发起 {tab === "hpo" ? "HPO 表型诊断" : "VCF 基因诊断"}
+                </Btn>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+Object.assign(window, { AppShell, PageNewDiag });
+</script>
+<script type="text/babel">/* global React, Btn, Badge, StatusDot, IconSearch, IconFilter, IconPlus, IconChevron, PATIENTS */
+const { useState: useStateB, useMemo: useMemoB } = React;
+
+function PageList({ setRoute }) {
+  const [q, setQ] = useStateB("");
+  const [sortKey, setSortKey] = useStateB("lastAt");
+  const [sortDir, setSortDir] = useStateB("desc");
+  const [statusFilter, setStatusFilter] = useStateB("all");
+
+  const rows = useMemoB(() => {
+    let arr = PATIENTS.slice();
+    if (q) {
+      const qq = q.toLowerCase();
+      arr = arr.filter(p => p.name.includes(q) || p.id.toLowerCase().includes(qq) || p.summary.toLowerCase().includes(qq));
+    }
+    if (statusFilter !== "all") arr = arr.filter(p => p.status === statusFilter);
+    arr.sort((a,b) => {
+      const av = a[sortKey] || ""; const bv = b[sortKey] || "";
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [q, sortKey, sortDir, statusFilter]);
+
+  const toggleSort = (k) => {
+    if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortKey(k); setSortDir("desc"); }
+  };
+  const sortCls = (k) => "is-sort" + (sortKey === k ? (sortDir === "asc" ? " is-asc" : " is-desc") : "");
+
+  const statusMap = {
+    diagnosed: { tone: "ok", label: "已确诊" },
+    running:   { tone: "info", label: "诊断中" },
+    review:    { tone: "warn", label: "待复核" },
+    failed:    { tone: "err", label: "失败" },
+  };
+
+  return (
+    <>
+      <div className="page-head page-head--compact">
+        <div>
+          <h1>患者列表</h1>
+          <div className="desc">共 {PATIENTS.length} 名患者 · 我发起过诊断的所有患者档案</div>
+        </div>
+        <div className="flex gap-2">
+          <Btn variant="secondary"><IconFilter/>导出 CSV</Btn>
+          <Btn variant="primary" onClick={() => setRoute({ view: "new" })}><IconPlus/>新建诊断</Btn>
+        </div>
+      </div>
+
+      <div className="plist-toolbar">
+        <div className="input-wrap">
+          <span className="input-wrap__icon"><IconSearch/></span>
+          <input className="input" placeholder="按姓名、ID、病史关键词搜索..." value={q} onChange={e=>setQ(e.target.value)}/>
+        </div>
+        <div className="chip-group">
+          {[["all","全部"],["diagnosed","已确诊"],["running","诊断中"],["review","待复核"],["failed","失败"]].map(([k,l]) => (
+            <button key={k} className={"chip" + (statusFilter === k ? " is-active" : "")} onClick={() => setStatusFilter(k)}>{l}</button>
+          ))}
+        </div>
+        <div style={{marginLeft:"auto", fontSize:"var(--fz-12)", color:"var(--text-3)"}}>
+          显示 <b>{rows.length}</b> / {PATIENTS.length}
+        </div>
+      </div>
+
+      <div className="plist-wrap">
+        <div className="plist-frame">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{width:180}}>患者 ID</th>
+                <th>姓名 / 年龄性别</th>
+                <th>核心症状摘要</th>
+                <th className="num" style={{width:80}}>HPO 次数</th>
+                <th className="num" style={{width:80}}>VCF 次数</th>
+                <th className={sortCls("lastAt")} style={{width:140}} onClick={()=>toggleSort("lastAt")}>最后诊断</th>
+                <th className={sortCls("createdAt")} style={{width:140}} onClick={()=>toggleSort("createdAt")}>创建时间</th>
+                <th style={{width:100}}>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(p => {
+                const s = statusMap[p.status];
+                return (
+                  <tr key={p.id} onClick={() => setRoute({ view: "patient", id: p.id, tab: p.id === HERO_PATIENT.id ? "hpo" : "hpo", sub: p.status === "running" ? "running" : "done" })}>
+                    <td className="mono" style={{color:"var(--text-3)"}}>{p.id}</td>
+                    <td>
+                      <div className="name-cell">
+                        <div className="name-avatar">{p.name.slice(-1)}</div>
+                        <div>
+                          <div className="name-main">{p.name}</div>
+                          <div className="name-sub">{p.gender} · {p.age}岁</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><div className="sum-cell">{p.summary}</div></td>
+                    <td className="num">{p.hpoCount}</td>
+                    <td className="num">{p.vcfCount}</td>
+                    <td className="mono" style={{color:"var(--text-2)"}}>{p.lastAt}</td>
+                    <td className="mono" style={{color:"var(--text-3)"}}>{p.createdAt}</td>
+                    <td>
+                      {p.status === "running"
+                        ? <span className="running-pill"><span className="spinner"/>诊断中</span>
+                        : <StatusDot kind={p.status === "diagnosed" ? "ok" : p.status === "review" ? "warn" : p.status === "failed" ? "err" : "queue"}>{s.label}</StatusDot>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+Object.assign(window, { PageList });
+</script>
+<script type="text/babel">/* global React, Btn, Badge, Acmg, Hpo, StatusDot, Progress, MatchBar, Conf, Rank, Alert, Tabs, Segmented, Field,
+   IconSearch, IconPlus, IconChevron, IconFilter, IconDownload, IconUpload, IconWarning, IconInfo, IconCheck, IconX,
+   IconDna, IconFile, IconSettings, IconSend, IconTrash, IconBeaker, IconUser,
+   HERO_PATIENT, PATIENTS, HPO_DIAG, HPO_RUNNING, VCF_RESULT, HISTORY */
+const { useState: useStateP, useEffect: useEffectP, useMemo: useMemoP, useRef: useRefP } = React;
+
+/* ============================================================
+   Patient detail – shared shell (left profile + right tabs)
+   ============================================================ */
+function PatientDetail({ route, setRoute, openDeleteDialog }) {
+  const patient = PATIENTS.find(p => p.id === route.id) || HERO_PATIENT;
+  const isHero = patient.id === HERO_PATIENT.id;
+  const [tab, setTab] = useStateP(route.tab || "hpo");
+  const [sub, setSub] = useStateP(route.sub || "done");  // done | running  (hpo only)
+  const [moreOpen, setMoreOpen] = useStateP(false);
+
+  useEffectP(() => { setTab(route.tab || "hpo"); setSub(route.sub || "done"); }, [route.id, route.tab, route.sub]);
+
+  const tabs = [
+    { key: "hpo", label: "HPO 诊断", icon: <IconUser/> },
+    { key: "vcf", label: "VCF 诊断", icon: <IconDna/> },
+  ];
+
+  const [histOpen, setHistOpen] = useStateP(false);
+
+  return (
+    <div className="pd-shell">
+      <LeftProfile patient={patient} isHero={isHero}
+        moreOpen={moreOpen} setMoreOpen={setMoreOpen}
+        onDelete={openDeleteDialog}
+        onBack={() => setRoute({ view: "list" })}/>
+
+      <div className="pd-right">
+        <div className="pd-tabs-bar">
+          <Tabs items={tabs} active={tab} onChange={setTab}/>
+          <div className="pd-tabs-bar__right">
+            {tab === "hpo" && (
+              <Segmented
+                items={[{key:"running", label:"诊断进行中"}, {key:"done", label:"诊断完成"}]}
+                active={sub} onChange={setSub}/>
+            )}
+            <Btn variant="ghost" size="sm" onClick={() => setHistOpen(true)}><IconFile/>查看历史诊断</Btn>
+          </div>
+        </div>
+
+        <div className="pd-content">
+          {tab === "hpo" && sub === "done" && <HpoDone/>}
+          {tab === "hpo" && sub === "running" && <HpoRunning/>}
+          {tab === "vcf" && <VcfDone/>}
+        </div>
+      </div>
+
+      {histOpen && (
+        <div className="overlay" onClick={() => setHistOpen(false)}>
+          <div className="dialog dialog--wide" onClick={e => e.stopPropagation()}>
+            <div className="dialog__head" style={{alignItems:"center"}}>
+              <div>
+                <div className="dialog__title">历史诊断记录</div>
+                <div className="dialog__desc">{patient.name} · {patient.id}</div>
+              </div>
+              <Btn variant="ghost" size="sm" onClick={() => setHistOpen(false)} style={{marginLeft:"auto"}}><IconX/></Btn>
+            </div>
+            <div className="dialog__body">
+              <HistoryTab/>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack }) {
+  const p = isHero ? HERO_PATIENT : patient;
+  const history = isHero ? HERO_PATIENT.history : [
+    { date: patient.createdAt, title: "录入 DeepRare", meta: "本账号录入" },
+    { date: patient.lastAt, title: "最近诊断", meta: patient.summary },
+  ];
+  return (
+    <aside className="pd-left">
+      <div className="pd-back-btn">
+        <Btn variant="ghost" size="sm" onClick={onBack}><IconChevron style={{transform:"rotate(180deg)"}}/>返回列表</Btn>
+      </div>
+      <div className="pd-left__top">
+        <div className="patient-id">
+          <div className="patient-id__avatar">{p.name.slice(-1)}</div>
+          <div>
+            <div className="patient-id__name">{p.name}</div>
+            <div className="patient-id__meta">{p.id} · {p.gender} · {p.age}岁</div>
+          </div>
+        </div>
+        <dl className="kv">
+          <dt>出生</dt><dd>{p.dob || "—"}</dd>
+          <dt>民族</dt><dd>{p.ethnicity || "—"}</dd>
+          <dt>近亲</dt><dd>{p.consanguinity || "否"}</dd>
+          <dt>录入</dt><dd>{p.registeredAt || p.createdAt}</dd>
+        </dl>
+      </div>
+
+      <div className="pd-left__section">
+        <div className="pd-left__title">家族史</div>
+        <div style={{fontSize:"var(--fz-12)", color:"var(--text-2)", lineHeight:1.55}}>
+          {p.familyHistory || "无特殊家族史"}
+        </div>
+      </div>
+
+      <div className="pd-left__section">
+        <div className="pd-left__title">核心症状</div>
+        <div style={{fontSize:"var(--fz-12)", color:"var(--text-2)", lineHeight:1.55}}>
+          {p.coreSymptoms || p.summary}
+        </div>
+      </div>
+
+      <div className="pd-left__section">
+        <div className="pd-left__title">
+          病史
+          {p.lastVisitAt && <span style={{marginLeft:"auto", fontSize:"var(--fz-11)", color:"var(--text-4)", fontWeight:400, fontFamily:"var(--font-mono)"}}>更新于 {p.lastVisitAt}</span>}
+        </div>
+        <div style={{fontSize:"var(--fz-12)", color:"var(--text-2)", lineHeight:1.65, whiteSpace:"pre-line", maxHeight:280, overflowY:"auto", paddingRight:4}}>
+          {p.presentText || p.summary || "—"}
+        </div>
+      </div>
+
+      <div className="pd-left__foot">
+        <Btn variant="secondary" size="sm" style={{flex:1}}><IconDownload/>导出档案</Btn>
+        <Btn variant="ghost" size="sm" onClick={() => setMoreOpen(!moreOpen)}>
+          更多操作 <IconChevron/>
+        </Btn>
+        {moreOpen && (
+          <div className="more-menu" onMouseLeave={() => setMoreOpen(false)}>
+            <div className="more-menu__item"><IconFile/>编辑档案</div>
+            <div className="more-menu__item"><IconBeaker/>合并档案</div>
+            <div className="more-menu__item"><IconDownload/>下载全部报告</div>
+            <div className="more-menu__divider"/>
+            <div className="more-menu__item is-danger" onClick={() => { setMoreOpen(false); onDelete(); }}>
+              <IconTrash/>删除患者…
+            </div>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+/* ============================================================
+   HPO · 诊断完成 (page C)
+   ============================================================ */
+function HpoDone() {
+  const [selected, setSelected] = useStateP(0);
+  const [subTab, setSubTab] = useStateP("hpo-match");
+  const d = HPO_DIAG;
+  const top1 = d.top5[0];
+
+  const subtabs = [
+    { key: "hpo-match", label: "HPO 匹配" },
+    { key: "evidence",  label: "诊断依据" },
+    ...(selected === 0 ? [{ key: "diff", label: "鉴别诊断" }] : []),
+    { key: "tests",     label: "推荐检查" },
+    { key: "similar",   label: "相似病例" },
+    { key: "mdt",       label: "MDT 建议" },
+    { key: "refs",      label: "参考文献" },
+  ];
+
+  return (
+    <>
+      {/* Summary bar */}
+      <div className="panel" style={{marginBottom:16}}>
+        <div className="panel__head">
+          <h3 className="panel__title">
+            <StatusDot kind="ok">HPO 表型诊断 · 已完成</StatusDot>
+          </h3>
+          <div className="flex gap-3" style={{alignItems:"center", fontSize:"var(--fz-12)", color:"var(--text-3)"}}>
+            <span>完成 <b style={{color:"var(--text-1)", fontFamily:"var(--font-mono)"}}>{d.completedAt}</b></span>
+            <span>耗时 <b style={{color:"var(--text-1)", fontFamily:"var(--font-mono)"}}>{d.duration}</b></span>
+            <span>模型 <b style={{color:"var(--text-1)", fontFamily:"var(--font-mono)"}}>{d.model}</b></span>
+            <Btn variant="primary" size="sm"><IconDownload/>导出诊断报告</Btn>
+          </div>
+        </div>
+        <div className="panel__body" style={{padding:"12px 16px"}}>
+          <div className="flex gap-2 wrap">
+            <span style={{fontSize:"var(--fz-12)", color:"var(--text-3)", marginRight:4, alignSelf:"center"}}>输入 HPO Terms ({d.hpoList.length}):</span>
+            {d.hpoList.map(h => <Hpo key={h.id} {...h} removable={false}/>)}
+          </div>
+        </div>
+      </div>
+
+      {/* Top 5 ranked */}
+      <div style={{fontSize:"var(--fz-13)", fontWeight:600, margin:"0 0 10px", display:"flex", alignItems:"center", gap:10}}>
+        <span>Top 5 疑似疾病</span>
+        <Badge tone="brand" pill>点击任意行切换详情</Badge>
+      </div>
+
+      <div className="disease-rank" style={{marginBottom:16}}>
+        {d.top5.map((r, i) => (
+          <div key={i} className={"disease-rank__row-wrap" + (selected === i ? " is-selected" : "")}>
+            <div className={"disease-rank__row" + (selected === i ? " is-selected" : "")} onClick={() => setSelected(i)}>
+              <Rank n={r.rank}/>
+              <div>
+                <div className="disease-rank__name-main">
+                  {r.nameCn}
+                  <span style={{color:"var(--text-4)", fontWeight:500, fontSize:"var(--fz-12)"}}>{r.name}</span>
+                </div>
+                <div className="disease-rank__name-sub">{r.omim}{r.orpha ? " · " + r.orpha : ""} · {r.gene} · {r.inherit}</div>
+              </div>
+              <MatchBar value={r.match}/>
+              <Conf value={r.conf} level={r.level}/>
+              <div style={{fontSize:"var(--fz-12)", color:"var(--text-3)", lineHeight:1.35}}>{r.summary}</div>
+              <IconChevron/>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Detail */}
+      <div className="panel">
+        <div className="panel__head">
+          <h3 className="panel__title">
+            <Rank n={d.top5[selected].rank}/>
+            {d.top5[selected].nameCn} · 诊断详情
+          </h3>
+          <div className="subtabs">
+            {subtabs.map(s => (
+              <button key={s.key} className={"subtabs__item" + (subTab === s.key ? " is-active" : "")} onClick={() => setSubTab(s.key)}>{s.label}</button>
+            ))}
+          </div>
+        </div>
+        <div className="panel__body">
+          {subTab === "hpo-match" && <HpoMatchView/>}
+          {subTab === "evidence" && <EvidenceView/>}
+          {subTab === "diff" && <DiffView/>}
+          {subTab === "tests" && <TestsView/>}
+          {subTab === "similar" && <SimilarView/>}
+          {subTab === "mdt" && <MdtView/>}
+          {subTab === "refs" && <RefsView/>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function HpoMatchView() {
+  const d = HPO_DIAG;
+  return (
+    <div className="scroll-area">
+      <table className="tbl" style={{border:"1px solid var(--border)", borderRadius:"var(--r-3)"}}>
+        <thead>
+          <tr>
+            <th style={{width:"30%"}}>指南诊断条件</th>
+            <th style={{width:"22%"}}>对应表型 (HPO)</th>
+            <th style={{width:80}}>匹配</th>
+            <th>患者表现</th>
+            <th style={{width:70}}>文献</th>
+          </tr>
+        </thead>
+        <tbody>
+          {d.top1Match.map((m, i) => {
+            const hitCls = m.hit === true ? "yes" : m.hit === false ? "no" : m.hit === "partial" ? "partial" : "unknown";
+            const hitLabel = m.hit === true ? "✓ 匹配" : m.hit === false ? "✗ 不符" : m.hit === "partial" ? "~ 部分" : "? 未知";
+            return (
+              <tr key={i}>
+                <td style={{fontWeight:500}}>{m.criterion}</td>
+                <td style={{fontSize:"var(--fz-12)", color:"var(--text-2)"}}>{m.phenotype}</td>
+                <td><span className={"hit hit--" + hitCls}>{hitLabel}</span></td>
+                <td style={{color:"var(--text-2)"}}>{m.patient}</td>
+                <td className="mono" style={{color:"var(--text-3)"}}>{m.ref}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function EvidenceView() {
+  const e = HPO_DIAG.evidence;
+  const block = (title, list) => (
+    <div style={{marginBottom:18}}>
+      <div style={{fontSize:"var(--fz-11)", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--text-3)", marginBottom:8, paddingBottom:6, borderBottom:"1px solid var(--border-subtle)"}}>{title}</div>
+      <ol style={{margin:0, paddingLeft:18, display:"flex", flexDirection:"column", gap:6, fontSize:"var(--fz-13)", lineHeight:1.6}}>
+        {list.map((it, i) => (
+          <li key={i} style={{color:"var(--text-1)"}}>
+            {it.text}<a className="cite-sup">{it.cite}</a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+  return (
+    <>
+      {block("临床表现", e.clinical)}
+      {block("实验室检查", e.lab)}
+      {block("治疗反应", e.therapy)}
+      {block("分子遗传证据", e.molecular)}
+      <Alert tone="ok" title="综合判断">{e.overall}</Alert>
+    </>
+  );
+}
+
+function DiffView() {
+  const d = HPO_DIAG.diff;
+  return (
+    <div className="scroll-area">
+      <table className="tbl cmp-table" style={{border:"1px solid var(--border)"}}>
+        <thead>
+          <tr>
+            <th>特征</th>
+            <th style={{color:"var(--accent)"}}>Wilson Disease (Top 1)</th>
+            <th>鉴别疾病 (HD / PKAN / NPC)</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          {d.map((r, i) => (
+            <tr key={i}>
+              <td style={{fontWeight:600}}>{r.feature}</td>
+              <td style={{color:"var(--brand-700)", background:"var(--accent-soft)"}}>{r.wilson}</td>
+              <td>{r.alt}</td>
+              <td style={{fontSize:"var(--fz-12)", color:"var(--text-3)"}}>{r.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TestsView() {
+  const t = HPO_DIAG.recommendedTests;
+  return (
+    <div className="grid-2">
+      <div>
+        <div style={{fontSize:"var(--fz-11)", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--ok-700)", marginBottom:8}}>确诊类检查</div>
+        <div className="soft-list is-confirm">
+          {t.confirm.map((x,i) => <div key={i}><IconCheck/> {x}</div>)}
+        </div>
+      </div>
+      <div>
+        <div style={{fontSize:"var(--fz-11)", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--info-700)", marginBottom:8}}>随访类检查</div>
+        <div className="soft-list is-follow">
+          {t.followup.map((x,i) => <div key={i}>↻ {x}</div>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SimilarView() {
+  const s = HPO_DIAG.similarCases;
+  return (
+    <div style={{display:"flex", flexDirection:"column", gap:10}}>
+      {s.map((c, i) => (
+        <div key={i} style={{padding:"12px 14px", border:"1px solid var(--border)", borderRadius:"var(--r-3)", background:"var(--bg-surface)"}}>
+          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6}}>
+            <div style={{fontWeight:600, fontSize:"var(--fz-13)"}}>{c.id}</div>
+            <MatchBar value={c.match}/>
+          </div>
+          <div style={{fontSize:"var(--fz-12)", color:"var(--text-2)", lineHeight:1.55}}>{c.brief}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MdtView() {
+  return (
+    <table className="tbl" style={{border:"1px solid var(--border)"}}>
+      <thead><tr><th style={{width:180}}>推荐科室</th><th>推荐理由</th></tr></thead>
+      <tbody>
+        {HPO_DIAG.mdt.map((m, i) => (
+          <tr key={i}>
+            <td><Badge tone="brand" pill>{m.dept}</Badge></td>
+            <td style={{color:"var(--text-2)"}}>{m.reason}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function RefsView() {
+  return (
+    <ol style={{margin:0, paddingLeft:20, display:"flex", flexDirection:"column", gap:8, fontSize:"var(--fz-12)", lineHeight:1.6, color:"var(--text-2)"}}>
+      {HPO_DIAG.references.map(r => (
+        <li key={r.n}><span className="mono" style={{color:"var(--text-3)"}}>[{r.n}]</span> {r.text}</li>
+      ))}
+    </ol>
+  );
+}
+
+/* ============================================================
+   HPO · 诊断进行中 (page D)
+   ============================================================ */
+function HpoRunning() {
+  const r = HPO_RUNNING;
+  const [stage, setStage] = useStateP(3); // 1,2,3 active
+  const [hpoList, setHpoList] = useStateP(r.stage2.extracted);
+  const [q, setQ] = useStateP("");
+
+  const removeHpo = (id) => setHpoList(hpoList.filter(h => h.id !== id));
+
+  return (
+    <>
+      {/* overall stepper */}
+      <div className="stepper" style={{marginBottom:18}}>
+        {["AI 追问症状","HPO 清单确认","自动推理"].map((label, i) => {
+          const n = i + 1;
+          const cls = n < stage ? "is-done" : n === stage ? "is-active" : "";
+          return (
+            <div key={i} className={"stepper__item " + cls}>
+              <div className="stepper__label">
+                <span className="stepper__num">{n}</span>
+                阶段 {n} · {label}
+              </div>
+              <div className="stepper__bar"/>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Stage 1 */}
+      <div className={"stage-card " + (stage > 1 ? "is-done" : stage === 1 ? "is-active" : "")}>
+        <div className="stage-card__head">
+          <div className="stage-card__title">
+            <span className="stage-card__num">1</span>
+            AI 追问症状
+            <Badge tone="ok" dot>已完成 · 3 轮问答</Badge>
+          </div>
+          <Btn variant="ghost" size="sm">查看完整对话 <IconChevron/></Btn>
+        </div>
+        <div className="stage-card__body" style={{padding:"14px 18px"}}>
+          <div className="chat">
+            {r.stage1.messages.slice(-4).map((m, i) => (
+              <div key={i} className={"chat__msg chat__msg--" + m.from}>
+                <div className={"chat__avatar chat__avatar--" + m.from}>{m.from === "ai" ? "AI" : "我"}</div>
+                <div className="chat__bubble">
+                  {m.text}
+                  {m.refs && m.refs.map((x,j) => <a key={j} className="cite-sup">[{x.n}]</a>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stage 2 */}
+      <div className={"stage-card " + (stage > 2 ? "is-done" : stage === 2 ? "is-active" : "")}>
+        <div className="stage-card__head">
+          <div className="stage-card__title">
+            <span className="stage-card__num">2</span>
+            HPO 清单确认
+            <Badge tone="ok" dot>已确认 {hpoList.length} 项</Badge>
+          </div>
+          <div className="input-wrap" style={{width:260}}>
+            <span className="input-wrap__icon"><IconSearch/></span>
+            <input className="input" placeholder="按 HPO 名称或 HP:ID 搜索..." value={q} onChange={e=>setQ(e.target.value)}/>
+          </div>
+        </div>
+        <div className="stage-card__body" style={{padding:"14px 18px"}}>
+          <div className="hpo-bag">
+            {hpoList.map(h => (
+              <span key={h.id} className={"hpo" + (h.neg ? " hpo--neg" : "")}>
+                <span className="hpo__id">{h.id}</span>
+                <span className="hpo__label">{h.label}</span>
+                <span className="hpo__x" onClick={() => removeHpo(h.id)}><IconX/></span>
+              </span>
+            ))}
+            <button className="btn btn--secondary btn--sm" style={{height:22}}><IconPlus/>手动添加</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stage 3 */}
+      <div className={"stage-card " + (stage === 3 ? "is-active" : "")}>
+        <div className="stage-card__head">
+          <div className="stage-card__title">
+            <span className="stage-card__num">3</span>
+            自动推理
+            <span className="running-pill"><span className="spinner"/>运行中 · 02:36</span>
+          </div>
+          <div className="flex gap-2" style={{alignItems:"center"}}>
+            <span style={{fontSize:"var(--fz-12)", color:"var(--text-3)"}}>开始于 {r.stage3.startedAt}</span>
+            <Btn variant="ghost" size="sm"><IconX/>终止</Btn>
+          </div>
+        </div>
+        <div className="stage-card__body">
+          <div className="reasoning-steps">
+            {r.stage3.steps.map((s, i) => (
+              <div key={i} className={"reasoning-step is-" + s.status}>
+                <div className="reasoning-step__icon">
+                  {s.status === "done" ? <IconCheck/> : s.status === "running" ? i+1 : i+1}
+                </div>
+                <div>
+                  <div className="reasoning-step__name">{s.label}</div>
+                  <div className="reasoning-step__meta">{s.meta}</div>
+                </div>
+                <div className="reasoning-step__status">
+                  {s.status === "done" && <Badge tone="ok" dot>完成</Badge>}
+                  {s.status === "running" && <span className="running-pill"><span className="spinner"/>运行中</span>}
+                  {s.status === "queue" && <Badge tone="outline">等待中</Badge>}
+                </div>
+                <div className="reasoning-step__t">{s.t}</div>
+              </div>
+            ))}
+          </div>
+          <div className="live-log">
+            {r.stage3.liveLog.map((l, i) => (
+              <div key={i} className="live-log__line">
+                <span className="live-log__t">[{l.t}]</span>
+                <span>{l.text}</span>
+              </div>
+            ))}
+            <div className="live-log__line">
+              <span className="live-log__t">[02:37]</span>
+              <span style={{color:"#8DB6F0"}}>正在收敛...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   VCF · 分析完成 (page E)
+   ============================================================ */
+function VcfDone() {
+  const v = VCF_RESULT;
+  const [expanded, setExpanded] = useStateP(new Set(["v1"]));
+  const toggle = (id) => {
+    const n = new Set(expanded);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    setExpanded(n);
+  };
+  const allRows = [...v.primary.map(r => ({...r, section:"primary"})), ...v.secondary.map(r => ({...r, section:"secondary"})), ...v.other.map(r => ({...r, section:"other"}))];
+
+  return (
+    <>
+      <div className="panel" style={{marginBottom:16}}>
+        <div className="panel__head">
+          <h3 className="panel__title">
+            <StatusDot kind="ok">VCF 基因诊断 · 已完成</StatusDot>
+          </h3>
+          <div className="flex gap-3" style={{alignItems:"center", fontSize:"var(--fz-12)", color:"var(--text-3)"}}>
+            <span>完成 <b style={{color:"var(--text-1)", fontFamily:"var(--font-mono)"}}>{v.completedAt}</b></span>
+            <Btn variant="primary" size="sm"><IconDownload/>导出 ACMG 报告</Btn>
+          </div>
+        </div>
+        <div className="panel__body">
+          <div className="kpi-inline">
+            {v.steps.map((s, i) => (
+              <div key={i} className={"kpi-inline__item" + (i === v.steps.length - 1 ? " kpi-inline__item--accent" : "")}>
+                <div className="kpi-inline__label">{s.label}</div>
+                <div className="kpi-inline__val">{s.value}</div>
+                <div className="kpi-inline__sub">{s.meta}</div>
+                <div className="kpi-inline__arrow"/>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel__head">
+          <h3 className="panel__title">基因变异结果 · 按发现类型分组</h3>
+          <div className="flex gap-2">
+            <Badge tone="soft-err"><span className="acmg acmg--p" style={{minWidth:"auto", height:14, fontSize:10}}>P</span> 2</Badge>
+            <Badge tone="soft-err"><span className="acmg acmg--lp" style={{minWidth:"auto", height:14, fontSize:10}}>LP</span> 1</Badge>
+            <Badge tone="soft-warn">VUS {v.summary.vus}</Badge>
+          </div>
+        </div>
+        <div className="panel__body panel__body--flush" style={{overflow:"auto"}}>
+          <table className="vtable">
+            <tbody>
+              <VSection title="Primary Findings" subtitle="主要发现 · 与表型直接相关" count={v.primary.length}/>
+              <VHead/>
+              {v.primary.map(r => (<VRow key={r.id} r={r} expanded={expanded.has(r.id)} onToggle={toggle}/>))}
+
+              <VSection title="Secondary Findings" subtitle="次要发现 · ACMG 推荐报告" count={v.secondary.length}/>
+              <VHead/>
+              {v.secondary.map(r => (<VRow key={r.id} r={r} expanded={expanded.has(r.id)} onToggle={toggle}/>))}
+
+              <VSection title="Other Findings" subtitle="其他发现 · 药物基因组 / 携带者" count={v.other.length}/>
+              <VHead/>
+              {v.other.map(r => (<VRow key={r.id} r={r} expanded={expanded.has(r.id)} onToggle={toggle}/>))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function VHead() {
+  return (
+    <tr className="vtable__head">
+      <th style={{width:26}}></th>
+      <th style={{width:60}}>ACMG</th>
+      <th>基因</th>
+      <th>位置</th>
+      <th>转录本 / cDNA</th>
+      <th>蛋白</th>
+      <th>类型</th>
+      <th>rsID</th>
+      <th>基因型</th>
+      <th>AD (AF)</th>
+      <th>SIFT</th>
+      <th>PolyPhen2</th>
+      <th>CADD</th>
+    </tr>
+  );
+}
+
+function VSection({ title, subtitle, count }) {
+  return (
+    <tr><td colSpan={13} style={{padding:0}}>
+      <div className="vtable__section">
+        <div>{title} <span style={{color:"var(--text-4)", textTransform:"none", letterSpacing:0, marginLeft:8, fontWeight:500}}>{subtitle}</span></div>
+        <div className="count">{count} 条</div>
+      </div>
+    </td></tr>
+  );
+}
+
+function VRow({ r, expanded, onToggle }) {
+  return (
+    <>
+      <tr className={expanded ? "is-expanded" : ""} onClick={() => onToggle(r.id)} style={{cursor:"pointer"}}>
+        <td><span className="expander"><IconChevron/></span></td>
+        <td><Acmg k={r.acmg}/></td>
+        <td style={{fontWeight:600}}>{r.gene}</td>
+        <td className="mono" style={{color:"var(--text-3)"}}>{r.pos}</td>
+        <td className="mono">{r.transcript}:{r.cdna}</td>
+        <td className="mono">{r.protein}</td>
+        <td style={{color:"var(--text-2)"}}>{r.type}</td>
+        <td className="mono" style={{color:"var(--text-3)"}}>{r.rsid}</td>
+        <td><Badge tone="outline">{r.zygosity === "het" ? "杂合" : r.zygosity === "hom" ? "纯合" : r.zygosity}</Badge></td>
+        <td className="mono">{r.ad}</td>
+        <td className="mono" style={{color: r.sift && r.sift.includes("D") ? "var(--err-500)" : "var(--text-3)"}}>{r.sift}</td>
+        <td className="mono" style={{color: r.polyphen && r.polyphen.includes("D") ? "var(--err-500)" : "var(--text-3)"}}>{r.polyphen}</td>
+        <td className="mono">{r.cadd}</td>
+      </tr>
+      {expanded && r.criteria && (<>
+        <tr><td colSpan={13} style={{padding:0}}>
+          <div className="vdetail">
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10, gap:16, flexWrap:"wrap"}}>
+              <div style={{fontSize:"var(--fz-11)", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--text-3)"}}>ACMG 证据条目</div>
+              <div style={{fontSize:"var(--fz-12)", color:"var(--text-3)", display:"flex", gap:18, alignItems:"center"}}>
+                <span>综合评级 <Acmg k={r.acmg}/></span>
+                <span>累计评分 <b className="mono" style={{color:"var(--text-1)", fontSize:"var(--fz-14)"}}>{(r.criteria.filter(c=>c.hit).reduce((s,c)=>s+(c.weight||0),0)>0?"+":"")+r.criteria.filter(c=>c.hit).reduce((s,c)=>s+(c.weight||0),0)}</b> 分 <span style={{color:"var(--text-4)"}}>(致病阈值 ≥6)</span></span>
+                <span>命中 <b className="mono" style={{color:"var(--text-1)"}}>{r.criteria.filter(c=>c.hit).length}</b> / {r.criteria.length} 条</span>
+              </div>
+            </div>
+            <table className="tbl" style={{border:"1px solid var(--border)", borderRadius:"var(--r-3)", marginBottom:18}}>
+              <thead><tr>
+                <th style={{width:64}}>证据</th>
+                <th style={{width:54}}>评分</th>
+                <th>判定依据</th>
+                <th style={{width:80}}>命中</th>
+                <th style={{width:220}}>参考文献 / 数据库</th>
+              </tr></thead>
+              <tbody>
+                {r.criteria.map((c,i) => (
+                  <tr key={i} style={{opacity: c.hit ? 1 : 0.5}}>
+                    <td><b className="mono" style={{color: c.code.startsWith("B") ? "var(--acmg-b-fg)" : "var(--acmg-p-fg)", fontWeight:700}}>{c.code}</b></td>
+                    <td className="mono" style={{color: (c.weight||0)>0 ? "var(--err-700)" : (c.weight||0)<0 ? "var(--ok-700)" : "var(--text-4)", fontWeight:600}}>{(c.weight||0)>0?"+":""}{c.weight||0}</td>
+                    <td style={{color:"var(--text-2)", lineHeight:1.55, whiteSpace:"normal", padding:"8px 12px"}}>{c.rationale || c.text}</td>
+                    <td>{c.hit ? <span className="hit hit--yes">✓ 命中</span> : <span className="hit hit--unknown">— 不触发</span>}</td>
+                    <td className="mono" style={{color:"var(--text-3)", fontSize:"var(--fz-11)", whiteSpace:"normal"}}>{c.ref || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div style={{display:"grid", gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)", gap:24}}>
+              <div>
+                <div style={{fontSize:"var(--fz-11)", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--text-3)", marginBottom:8}}>预测工具详情</div>
+                <table className="tbl" style={{border:"1px solid var(--border)"}}>
+                  <thead><tr><th>工具</th><th>分数</th><th>结论</th></tr></thead>
+                  <tbody>
+                    {r.predictions && r.predictions.map((p, i) => (
+                      <tr key={i}>
+                        <td style={{fontWeight:600}}>{p.tool}</td>
+                        <td className="mono">{p.score}</td>
+                        <td style={{color: p.label.toLowerCase().includes("no") || p.label.toLowerCase().includes("benign") ? "var(--text-3)" : "var(--err-700)"}}>{p.label}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                {r.geneInfo && (<>
+                  <div style={{fontSize:"var(--fz-11)", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--text-3)", marginBottom:6}}>基因功能</div>
+                  <div style={{fontSize:"var(--fz-13)", color:"var(--text-2)", lineHeight:1.6, marginBottom:14}}>{r.geneInfo}</div>
+                </>)}
+                {r.literature && (<>
+                  <div style={{fontSize:"var(--fz-11)", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--text-3)", marginBottom:6}}>关联文献</div>
+                  <ol style={{margin:0, paddingLeft:18, fontSize:"var(--fz-12)", color:"var(--text-2)", lineHeight:1.6}}>
+                    {r.literature.map(l => <li key={l.n}><span className="mono" style={{color:"var(--text-3)"}}>[{l.n}]</span> {l.text}</li>)}
+                  </ol>
+                </>)}
+              </div>
+            </div>
+          </div>
+        </td></tr>
+      </>)}
+    </>
+  );
+}
+
+/* ============================================================
+   History tab (page F content)
+   ============================================================ */
+function HistoryTab() {
+  const [type, setType] = useStateP("all");
+  const rows = useMemoP(() => {
+    if (type === "all") return HISTORY;
+    return HISTORY.filter(h => h.type === type);
+  }, [type]);
+  const statusMap = {
+    done:    { tone: "ok",   label: "已完成" },
+    failed:  { tone: "err",  label: "失败" },
+    running: { tone: "info", label: "进行中" },
+  };
+  return (
+    <>
+      <div className="panel">
+        <div className="panel__head">
+          <h3 className="panel__title">历史诊断记录 <Badge tone="outline">{HISTORY.length} 条</Badge></h3>
+          <div className="flex gap-3" style={{alignItems:"center"}}>
+            <div className="chip-group">
+              {[["all","全部"],["HPO","HPO 表型"],["VCF","VCF 基因"]].map(([k,l]) => (
+                <button key={k} className={"chip" + (type === k ? " is-active" : "")} onClick={() => setType(k)}>{l}</button>
+              ))}
+            </div>
+            <select className="select" style={{width:160}}>
+              <option>最近 12 个月</option><option>最近 3 个月</option><option>全部时间</option>
+            </select>
+          </div>
+        </div>
+        <div className="panel__body panel__body--flush">
+          <div className="hist-list">
+            {rows.map(h => {
+              const s = statusMap[h.status];
+              return (
+                <div key={h.id} className="hist-item">
+                  <div className={"hist-item__type hist-item__type--" + h.type}>{h.type}</div>
+                  <div>
+                    <div className="hist-item__title">
+                      #{h.id} · {h.type === "HPO" ? "HPO 表型诊断" : "VCF 基因诊断"}
+                      <span style={{marginLeft:10}}>
+                        {h.status === "running"
+                          ? <span className="running-pill"><span className="spinner"/>进行中</span>
+                          : <StatusDot kind={h.status === "done" ? "ok" : "err"}>{s.label}</StatusDot>}
+                      </span>
+                    </div>
+                    <div className="hist-item__summary">{h.summary}</div>
+                    <div className="hist-item__meta">开始于 {h.startedAt} · 耗时 {h.duration}</div>
+                  </div>
+                  <div className="hist-item__right">
+                    <Btn variant="ghost" size="sm">查看详情 <IconChevron/></Btn>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   Delete patient dialog
+   ============================================================ */
+function DeleteDialog({ patient, onClose, onConfirm }) {
+  const [confirmText, setConfirmText] = useStateP("");
+  const canDelete = confirmText === patient.name;
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="dialog" onClick={e => e.stopPropagation()}>
+        <div className="dialog__head">
+          <div className="dialog__icon"><IconWarning/></div>
+          <div>
+            <div className="dialog__title">删除患者档案</div>
+            <div className="dialog__desc">
+              此操作将永久删除 <b>{patient.name} ({patient.id})</b> 的所有内容：
+            </div>
+          </div>
+        </div>
+        <div className="dialog__body">
+          <ul style={{margin:"6px 0 0", paddingLeft:18, fontSize:"var(--fz-12)", color:"var(--text-2)", lineHeight:1.7}}>
+            <li>患者基本档案与病史时间线</li>
+            <li>所有 HPO 诊断记录 ({patient.hpoCount || 2} 条) 与 VCF 分析记录 ({patient.vcfCount || 1} 条)</li>
+            <li>进行中的诊断任务将被立即终止</li>
+            <li>已导出的 PDF 报告不受影响</li>
+          </ul>
+          <Alert tone="err" title="操作不可撤销" icon={<IconWarning/>} />
+        </div>
+        <div className="dialog__confirm-field">
+          请输入患者姓名 <code>{patient.name}</code> 以确认删除:
+          <input className="input" style={{marginTop:6}} value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="输入姓名..."/>
+        </div>
+        <div className="dialog__foot">
+          <Btn variant="secondary" onClick={onClose}>取消</Btn>
+          <Btn variant="danger" disabled={!canDelete} onClick={onConfirm}><IconTrash/>永久删除患者</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { PatientDetail, DeleteDialog });
+</script>
+<script type="text/babel">
+const { useState, useEffect } = React;
+function App() {
+  const [route, setRoute] = useState(() => {
+    try { const v = JSON.parse(localStorage.getItem("dr-route") || "null"); return v || { view: "new" }; }
+    catch { return { view: "new" }; }
+  });
+  useEffect(() => { try { localStorage.setItem("dr-route", JSON.stringify(route)); } catch {} }, [route]);
+  const [deleteFor, setDeleteFor] = useState(null);
+  const navigate = (r) => setRoute(r);
+  let view = null;
+  if (route.view === "new") view = <PageNewDiag setRoute={navigate}/>;
+  else if (route.view === "list") view = <PageList setRoute={navigate}/>;
+  else if (route.view === "patient") view = <PatientDetail route={route} setRoute={navigate} openDeleteDialog={() => {
+    const p = PATIENTS.find(x => x.id === route.id) || HERO_PATIENT;
+    setDeleteFor(p);
+  }}/>;
+  return (<>
+    <AppShell route={route} setRoute={navigate}>{view}</AppShell>
+    {deleteFor && <DeleteDialog patient={deleteFor} onClose={() => setDeleteFor(null)} onConfirm={() => { setDeleteFor(null); navigate({view:"list"}); }}/>}
+  </>);
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
