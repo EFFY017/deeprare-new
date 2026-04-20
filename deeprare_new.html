@@ -2615,7 +2615,6 @@ Object.assign(window, {
 });
 </script>
 <script type="text/babel">/* global React */
-const { useState } = React;
 
 const Btn = ({ variant = "secondary", size, icon, children, ...p }) => (
   <button className={`btn btn--${variant}${size ? " btn--" + size : ""}`} {...p}>
@@ -3180,7 +3179,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack 
   return (
     <aside className="pd-left">
       <div className="pd-back-btn">
-        <Btn variant="ghost" size="sm" onClick={onBack}><IconChevron style={{transform:"rotate(180deg)"}}/>返回列表</Btn>
+        <Btn variant="ghost" size="sm" onClick={onBack}><IconChevron style={{transform:"rotate(90deg)"}}/>返回列表</Btn>
       </div>
       <div className="pd-left__top">
         <div className="patient-id">
@@ -3223,7 +3222,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack 
       </div>
 
       <div className="pd-left__foot">
-        <Btn variant="secondary" size="sm" style={{flex:1}}><IconDownload/>导出档案</Btn>
+        {/* <Btn variant="secondary" size="sm" style={{flex:1}}><IconDownload/>导出档案</Btn> */}
         <Btn variant="ghost" size="sm" onClick={() => setMoreOpen(!moreOpen)}>
           更多操作 <IconChevron/>
         </Btn>
@@ -3914,7 +3913,6 @@ function DeleteDialog({ patient, onClose, onConfirm }) {
 Object.assign(window, { PatientDetail, DeleteDialog });
 </script>
 <script type="text/babel">
-const { useState, useEffect } = React;
 function App() {
   const [route, setRoute] = useState(() => {
     try { const v = JSON.parse(localStorage.getItem("dr-route") || "null"); return v || { view: "new" }; }
