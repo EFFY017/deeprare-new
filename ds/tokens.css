@@ -1,0 +1,191 @@
+/* ============================================================
+   DeepRare · Design Tokens
+   ============================================================ */
+
+:root {
+  /* ---------- Brand · Indigo (沉稳蓝) ---------- */
+  --brand-50:  #EEF3FC;
+  --brand-100: #D9E3F6;
+  --brand-200: #B4C6ED;
+  --brand-300: #85A3DF;
+  --brand-400: #5A7FCE;
+  --brand-500: #3A60B8;   /* primary */
+  --brand-600: #2B4C9D;
+  --brand-700: #213C7E;
+  --brand-800: #182D60;
+  --brand-900: #0F1E40;
+
+  /* ---------- Neutral · Ultra-clean ---------- */
+  --n-0:  #FFFFFF;
+  --n-25: #FFFFFF;
+  --n-50: #F9FAFC;
+  --n-100:#F2F4F7;
+  --n-150:#E9ECF1;
+  --n-200:#DCE0E6;
+  --n-300:#BCC2CC;
+  --n-400:#8F96A1;
+  --n-500:#6F7681;
+  --n-600:#52586A;
+  --n-700:#353B47;
+  --n-800:#21262F;
+  --n-900:#121620;
+
+  /* ---------- Semantic ---------- */
+  --bg:          var(--n-0);
+  --bg-sunken:   var(--n-50);
+  --bg-surface:  var(--n-0);
+  --bg-elevated: var(--n-0);
+  --bg-hover:    #F4F8FE;
+  --bg-selected: var(--brand-50);
+
+  --border:      var(--n-150);
+  --border-strong: var(--n-200);
+  --border-subtle: var(--n-100);
+
+  --text-1:      var(--n-900);
+  --text-2:      var(--n-700);
+  --text-3:      var(--n-500);
+  --text-4:      var(--n-400);
+  --text-inv:    var(--n-0);
+  --text-link:   var(--brand-600);
+
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+
+  /* ---------- Status (清晰临床色, 饱和度提升) ---------- */
+  --ok-50:  #DCF3E3; --ok-500:  #189D4E; --ok-700: #0F6B34;
+  --warn-50:#FDF0D0; --warn-500:#D98A0B; --warn-700:#8A5500;
+  --err-50: #FBE1DF; --err-500: #D6342C; --err-700: #961C16;
+  --info-50:#DCEBF7; --info-500:#1C7BC9; --info-700:#0F5389;
+  --neutral-50:var(--n-100); --neutral-500:var(--n-500); --neutral-700:var(--n-700);
+
+  /* ---------- ACMG · 新临床柔和色板 ---------- */
+  /* P Pathogenic  · 红 */
+  --acmg-p-bg:   #EFD6D3; --acmg-p-fg:  #8C2F2A; --acmg-p-bar:#E7C8C5;
+  /* LP Likely Path · 橘 */
+  --acmg-lp-bg:  #DCC4C2; --acmg-lp-fg: #7A2E28; --acmg-lp-bar:#CFAAA7;
+  /* VUS · 暖石 (同色卡) */
+  --acmg-vus-bg: #ECE7DA; --acmg-vus-fg:#6C5E3A; --acmg-vus-bar:#9A8854;
+  /* LB Likely Ben · 青 */
+  --acmg-lb-bg:  #D9E4E1; --acmg-lb-fg: #2F5C55; --acmg-lb-bar:#BCDED5;
+  /* B Benign · 绿 */
+  --acmg-b-bg:   #D9E7D5; --acmg-b-fg:  #2D5B36; --acmg-b-bar:#C8DEC2;
+
+  /* ---------- Radius ---------- */
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-3: 6px;
+  --r-4: 8px;
+  --r-5: 12px;
+  --r-pill: 999px;
+
+  /* ---------- Shadow ---------- */
+  --sh-1: 0 1px 0 rgba(20,25,34,.04), 0 1px 2px rgba(20,25,34,.04);
+  --sh-2: 0 2px 4px rgba(20,25,34,.06), 0 1px 2px rgba(20,25,34,.04);
+  --sh-3: 0 6px 16px -4px rgba(20,25,34,.10), 0 2px 4px rgba(20,25,34,.06);
+  --sh-pop: 0 12px 32px -8px rgba(20,25,34,.18), 0 4px 10px rgba(20,25,34,.08);
+  --sh-focus: 0 0 0 3px rgba(58,82,174,.22);
+
+  /* ---------- Density (standard by default) ---------- */
+  --row-h:       36px;
+  --row-h-tight: 32px;
+  --cell-px:     12px;
+  --pad-1: 4px;
+  --pad-2: 8px;
+  --pad-3: 12px;
+  --pad-4: 16px;
+  --pad-5: 20px;
+  --pad-6: 24px;
+  --pad-8: 32px;
+
+  /* ---------- Type ---------- */
+  --font-sans: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fz-11: 11px;
+  --fz-12: 12px;
+  --fz-13: 13px;
+  --fz-14: 14px;
+  --fz-15: 15px;
+  --fz-16: 16px;
+  --fz-18: 18px;
+  --fz-20: 20px;
+  --fz-24: 24px;
+  --fz-30: 30px;
+  --fz-36: 36px;
+  --fz-48: 48px;
+
+  --lh-tight: 1.25;
+  --lh-base:  1.5;
+  --lh-loose: 1.65;
+}
+
+/* ---------- Density · Compact ---------- */
+html[data-density="compact"] {
+  --row-h:       30px;
+  --row-h-tight: 26px;
+  --cell-px:     10px;
+  --pad-3: 10px;
+  --pad-4: 12px;
+  --pad-5: 16px;
+  --pad-6: 20px;
+}
+
+/* ---------- Theme variants ---------- */
+html[data-theme="teal"] {
+  --brand-50:  #E4F2F1;
+  --brand-100: #C6E2E0;
+  --brand-200: #94C7C2;
+  --brand-300: #5FA9A2;
+  --brand-400: #3C8B84;
+  --brand-500: #247068;
+  --brand-600: #1A5A52;
+  --brand-700: #124440;
+  --brand-800: #0C322E;
+  --brand-900: #07211F;
+  --text-link:   var(--brand-600);
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+  --bg-selected: var(--brand-50);
+  --sh-focus: 0 0 0 3px rgba(36,112,104,.22);
+}
+
+html[data-theme="graphite"] {
+  --brand-50:  #EEF0F2;
+  --brand-100: #DDE0E4;
+  --brand-200: #BBC1CA;
+  --brand-300: #8E97A4;
+  --brand-400: #5F6A7A;
+  --brand-500: #3B4556;
+  --brand-600: #2C3644;
+  --brand-700: #212834;
+  --brand-800: #171C26;
+  --brand-900: #0D1118;
+  --text-link:   #2C4196;
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+  --bg-selected: #EEF1FA;
+  --sh-focus: 0 0 0 3px rgba(59,69,86,.22);
+}
+
+html[data-theme="plum"] {
+  --brand-50:  #F1EBF2;
+  --brand-100: #E2D5E6;
+  --brand-200: #C4ABCD;
+  --brand-300: #9E7AAB;
+  --brand-400: #7A5388;
+  --brand-500: #5D3B6C;
+  --brand-600: #4A2E58;
+  --brand-700: #382343;
+  --brand-800: #28182F;
+  --brand-900: #180D1C;
+  --text-link:   var(--brand-600);
+  --accent:      var(--brand-500);
+  --accent-hover:var(--brand-600);
+  --accent-soft: var(--brand-50);
+  --bg-selected: var(--brand-50);
+  --sh-focus: 0 0 0 3px rgba(93,59,108,.22);
+}
