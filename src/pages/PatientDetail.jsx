@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Btn, Badge, Acmg, Hpo, StatusDot, MatchBar, Conf, Rank, Alert, Tabs, Segmented } from '../components/primitives'
 import {
   IconSearch, IconPlus, IconChevron, IconDownload, IconX, IconDna, IconFile,
@@ -79,26 +79,45 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
    ============================================================ */
 function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack, onHistOpen }) {
   const p = isHero ? HERO_PATIENT : patient
+  const [histTip, setHistTip] = useState(false)
   const history = isHero ? HERO_PATIENT.history : [
     { date: patient.createdAt, title: '录入 DeepRare', meta: '本账号录入' },
     { date: patient.lastAt,    title: '最近诊断',     meta: patient.summary },
   ]
   return (
     <aside className="pd-left">
-      <div className="pd-back-btn">
-        <Btn variant="ghost" size="sm" onClick={onBack}><IconChevron style={{transform:'rotate(180deg)'}}/>返回列表</Btn>
-        <Btn variant="secondary" size="sm" onClick={onHistOpen}><IconFile/>患者历史</Btn>
-      </div>
       <div className="pd-left__top">
         <div className="patient-id">
           <div className="patient-id__avatar">{p.name.slice(-1)}</div>
-          <div>
+          <div style={{flex:1,minWidth:0}}>
             <div className="patient-id__name">{p.name}</div>
             <div className="patient-id__meta">{p.id} · {p.gender} · {p.age}岁</div>
           </div>
+          <div style={{position:'relative',flexShrink:0}}>
+            <button
+              onClick={onHistOpen}
+              onMouseEnter={() => setHistTip(true)}
+              onMouseLeave={() => setHistTip(false)}
+              style={{
+                display:'grid',placeItems:'center',
+                width:28,height:28,borderRadius:'var(--r-2)',
+                border:'1px solid var(--border)',background:'var(--bg-surface)',
+                color:'var(--text-3)',cursor:'pointer',
+              }}
+            ><IconFile/></button>
+            {histTip && (
+              <div style={{
+                position:'absolute',top:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',
+                background:'var(--n-900)',color:'#fff',
+                fontSize:'var(--fz-11)',fontWeight:500,
+                padding:'4px 8px',borderRadius:'var(--r-2)',
+                whiteSpace:'nowrap',zIndex:999,pointerEvents:'none',
+              }}>查看患者历史</div>
+            )}
+          </div>
         </div>
         <dl className="kv">
-          <dt>出生</dt><dd>{p.dob || '—'}</dd>
+          <dt>出生日期</dt><dd>{p.dob || '—'}</dd>
           <dt>民族</dt><dd>{p.ethnicity || '—'}</dd>
           <dt>近亲</dt><dd>{p.consanguinity || '否'}</dd>
           <dt>录入</dt><dd>{p.registeredAt || p.createdAt}</dd>
@@ -110,10 +129,10 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
         <div style={{fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.55}}>{p.familyHistory || '无特殊家族史'}</div>
       </div>
 
-      <div className="pd-left__section">
+      {/* <div className="pd-left__section">
         <div className="pd-left__title">核心症状</div>
         <div style={{fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.55}}>{p.coreSymptoms || p.summary}</div>
-      </div>
+      </div> */}
 
       {p.hpoTerms && p.hpoTerms.length > 0 && (
         <div className="pd-left__section">
@@ -142,16 +161,12 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
       </div>
 
       <div className="pd-left__foot">
-        <Btn variant="secondary" size="sm" style={{flex:1}}><IconDownload/>导出档案</Btn>
+        <Btn variant="secondary" size="sm" style={{flex:1}}><IconFile/>编辑档案</Btn>
         <Btn variant="ghost" size="sm" onClick={() => setMoreOpen(!moreOpen)}>
           更多操作 <IconChevron/>
         </Btn>
         {moreOpen && (
           <div className="more-menu" onMouseLeave={() => setMoreOpen(false)}>
-            <div className="more-menu__item"><IconFile/>编辑档案</div>
-            <div className="more-menu__item"><IconBeaker/>合并档案</div>
-            <div className="more-menu__item"><IconDownload/>下载全部报告</div>
-            <div className="more-menu__divider"/>
             <div className="more-menu__item is-danger" onClick={() => { setMoreOpen(false); onDelete() }}>
               <IconTrash/>删除患者…
             </div>
@@ -182,57 +197,59 @@ function HpoDone() {
     { key: 'refs',    label: '参考文献' },
   ]
 
+  const selectDisease = (i) => { setSelected(i); setSubTab('hpo-match') }
+
   return (
     <>
-      {/* AI 追问过程 — default collapsed */}
-      <div className={'stage-card' + (convoOpen ? '' : ' stage-card--collapsed')}>
+      {/* Summary strip + AI 追问 */}
+      <div className="panel" style={{marginBottom:14}}>
+        <div className="panel__head">
+          <h3 className="panel__title">
+            <StatusDot kind="ok">HPO 表型诊断 · 已完成</StatusDot>
+          </h3>
+          <div style={{display:'flex',alignItems:'center',gap:16,fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
+            <span>完成 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.completedAt}</b></span>
+            <span>耗时 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.duration}</b></span>
+            {/* <span>模型 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.model}</b></span> */}
+            <Btn variant="primary" size="sm"><IconDownload/>导出诊断报告</Btn>
+          </div>
+        </div>
+        {/* AI 追问折叠区 */}
         <div
-          className="stage-card__head"
-          style={{cursor:'pointer'}}
+          style={{
+            display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'10px 16px',cursor:'pointer',
+            borderTop:'1px solid var(--border)',
+            background: convoOpen ? 'var(--bg-sunken)' : undefined,
+          }}
           onClick={() => setConvoOpen(o => !o)}
         >
-          <div className="stage-card__title">
-            <span className="stage-card__num" style={{background:'var(--ok-500)',color:'#fff'}}>✓</span>
+          <div style={{display:'flex',alignItems:'center',gap:8,fontSize:'var(--fz-12)',fontWeight:500,color:'var(--text-2)'}}>
+            <span className="stage-card__num" style={{background:'var(--ok-500)',color:'#fff',width:18,height:18,borderRadius:'50%',display:'grid',placeItems:'center',fontSize:10,fontWeight:700,flexShrink:0}}>✓</span>
             AI 追问过程
             <Badge tone="ok" dot>已完成 · {d.conversation.filter(m => m.from === 'user').length} 轮问答</Badge>
           </div>
           <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)',display:'flex',alignItems:'center',gap:4}}>
             {convoOpen ? '收起' : '展开详情'}
-            <IconChevron style={{transform: convoOpen ? 'rotate(270deg)' : 'rotate(90deg)',transition:'transform .15s'}}/>
+            <IconChevron style={{transform: convoOpen ? 'rotate(270deg)' : 'rotate(90deg)', transition:'transform .15s'}}/>
           </span>
         </div>
-        <div className="stage-card__body" style={{padding:'14px 18px'}}>
-          <div className="chat">
-            {d.conversation.map((m, i) => (
-              <div key={i} className={'chat__msg chat__msg--' + m.from}>
-                <div className={'chat__avatar chat__avatar--' + m.from}>{m.from === 'ai' ? 'AI' : '我'}</div>
-                <div className="chat__bubble">{m.text}</div>
-              </div>
-            ))}
+        {convoOpen && (
+          <div style={{padding:'16px 20px',borderTop:'1px solid var(--border)'}}>
+            <ConvoMessages messages={d.conversation}/>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Summary bar */}
-      <div className="panel" style={{marginBottom:16}}>
+      {/* HPO terms */}
+      <div className="panel" style={{marginBottom:14}}>
         <div className="panel__head">
-          <h3 className="panel__title">
-            <StatusDot kind="ok">HPO 表型诊断 · 已完成</StatusDot>
-          </h3>
-          <div className="flex gap-3" style={{alignItems:'center',fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
-            <span>完成 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.completedAt}</b></span>
-            <span>耗时 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.duration}</b></span>
-            <span>模型 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.model}</b></span>
-            <Btn variant="primary" size="sm"><IconDownload/>导出诊断报告</Btn>
-          </div>
+          <span className="panel__title">输入 HPO 表型</span>
+          <span style={{fontSize:'var(--fz-11)',fontFamily:'var(--font-mono)',color:'var(--text-4)'}}>
+            {d.hpoList.length} 项
+          </span>
         </div>
-
-        {/* HPO terms */}
-        <div className="panel__body" style={{borderBottom:'1px solid var(--border)'}}>
-          <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
-            输入 HPO 表型
-            <span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontFamily:'var(--font-mono)',color:'var(--text-4)'}}>· {d.hpoList.length} 项</span>
-          </div>
+        <div className="panel__body" style={{paddingTop:12,paddingBottom:12}}>
           <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
             {d.hpoList.map(h => (
               <Hpo key={h.id} id={h.id} label={h.label} neg={h.neg} removable={false}/>
@@ -241,80 +258,90 @@ function HpoDone() {
         </div>
       </div>
 
-      {/* Top 5 diseases table */}
-      <div className="panel" style={{marginBottom:16}}>
-        <div className="panel__head">
-          <h3 className="panel__title">候选疾病 Top 5</h3>
-          <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>点击行查看详细诊断依据</span>
-        </div>
-        <div className="panel__body panel__body--flush" style={{overflow:'auto'}}>
-          <table className="tbl" style={{width:'100%'}}>
-            <thead>
-              <tr>
-                <th style={{width:48}}>排名</th>
-                <th>疾病名称</th>
-                <th style={{width:110}}>OMIM / ORPHA</th>
-                <th style={{width:70}}>致病基因</th>
-                <th style={{width:60}}>遗传</th>
-                <th style={{width:120}}>匹配度</th>
-                <th style={{width:80}}>置信度</th>
-                <th>简述</th>
-              </tr>
-            </thead>
-            <tbody>
-              {d.top5.map((r, i) => (
-                <tr
-                  key={i}
-                  onClick={() => { setSelected(i); setSubTab('hpo-match') }}
-                  style={{cursor:'pointer', background: selected === i ? 'var(--accent-soft)' : undefined}}
-                >
-                  <td style={{textAlign:'center'}}><Rank n={r.rank}/></td>
-                  <td>
-                    <div style={{fontWeight:600,fontSize:'var(--fz-13)'}}>{r.nameCn}</div>
-                    <div style={{fontSize:'var(--fz-11)',color:'var(--text-4)'}}>{r.name}</div>
-                  </td>
-                  <td className="mono" style={{fontSize:'var(--fz-11)',color:'var(--text-3)'}}>
-                    {r.omim}{r.orpha ? <><br/>{r.orpha}</> : null}
-                  </td>
-                  <td style={{fontWeight:600,color:'var(--accent)'}}>{r.gene}</td>
-                  <td><Badge tone="outline">{r.inherit}</Badge></td>
-                  <td><MatchBar value={r.match}/></td>
-                  <td>
-                    <Conf value={r.conf} level={r.level}/>
-                  </td>
-                  <td style={{fontSize:'var(--fz-12)',color:'var(--text-2)'}}>{r.summary}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Top 5 + Detail — left / right split */}
+      <div style={{display:'flex',gap:14,alignItems:'start'}}>
 
-      {/* Disease detail panel */}
-      <div className="panel">
-        <div className="panel__head" style={{flexWrap:'wrap',gap:10}}>
-          <h3 className="panel__title">
-            <Rank n={dis.rank}/>
-            {dis.nameCn} · 诊断详情
-            <span style={{fontSize:'var(--fz-11)',color:'var(--text-3)',fontFamily:'var(--font-mono)',fontWeight:400}}>
-              {dis.omim}{dis.orpha ? ' · ' + dis.orpha : ''} · {dis.gene} · {dis.inherit}
-            </span>
-          </h3>
-          <div className="subtabs">
-            {subtabs.map(s => (
-              <button key={s.key} className={'subtabs__item' + (subTab === s.key ? ' is-active' : '')} onClick={() => setSubTab(s.key)}>{s.label}</button>
+        {/* Left — Top 5 disease list */}
+        <div style={{width:320,flexShrink:0}}>
+          <div className="panel__head" style={{
+            background:'var(--bg-sunken)',border:'1px solid var(--border)',
+            borderRadius:'var(--r-4) var(--r-4) 0 0',borderBottom:'none',
+            padding:'10px 14px',
+          }}>
+            <span className="panel__title" style={{fontSize:'var(--fz-12)'}}>候选疾病 Top 5</span>
+          </div>
+          <div className="disease-rank" style={{borderRadius:'0 0 var(--r-4) var(--r-4)'}}>
+            {d.top5.map((r, i) => (
+              <div key={i} className={'disease-rank__row-wrap' + (selected === i ? ' is-selected' : '')}>
+                <div
+                  className={'disease-rank__row--flex' + (selected === i ? ' is-selected' : '')}
+                  onClick={() => selectDisease(i)}
+                >
+                  <Rank n={r.rank}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="disease-rank__name-main" style={{fontSize:'var(--fz-13)'}}>{r.nameCn}</div>
+                    <div className="disease-rank__name-sub" style={{marginBottom:8}}>{r.name}</div>
+                    {/* <MatchBar value={r.match}/> */}
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6,flexShrink:0}}>
+                    <Conf value={r.conf} level={r.level}/>
+                    <div style={{display:'flex',gap:4}}>
+                      <Badge tone="brand" pill>{r.gene}</Badge>
+                      <Badge tone="outline" pill>{r.inherit}</Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
-        <div className="panel__body">
-          {subTab === 'hpo-match' && <HpoMatchView/>}
-          {subTab === 'evidence'  && <EvidenceView/>}
-          {subTab === 'diff'      && <DiffView/>}
-          {subTab === 'tests'     && <TestsView/>}
-          {subTab === 'similar'   && <SimilarView/>}
-          {subTab === 'mdt'       && <MdtView/>}
-          {subTab === 'refs'      && <RefsView/>}
+
+        {/* Right — Disease detail */}
+        <div style={{flex:1,minWidth:0}}>
+          <div className="panel">
+            {/* Detail head: disease title */}
+            <div className="panel__head" style={{flexDirection:'column',alignItems:'flex-start',gap:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,width:'100%',justifyContent:'space-between'}}>
+                <h3 className="panel__title" style={{fontSize:'var(--fz-14)'}}>
+                  <Rank n={dis.rank}/>
+                  {dis.nameCn}
+                </h3>
+                <span style={{fontSize:'var(--fz-11)',fontFamily:'var(--font-mono)',color:'var(--text-4)',flexShrink:0}}>
+                  {dis.omim}{dis.orpha ? ' · ' + dis.orpha : ''}
+                </span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8,width:'100%',justifyContent:'space-between'}}>
+                <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                  <Badge tone="brand">{dis.gene}</Badge>
+                  <Badge tone="outline">{dis.inherit}</Badge>
+                  <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>{dis.summary}</span>
+                </div>
+              </div>
+              {/* Subtabs */}
+              <div className="subtabs">
+                {subtabs.map(s => (
+                  <button
+                    key={s.key}
+                    className={'subtabs__item' + (subTab === s.key ? ' is-active' : '')}
+                    onClick={() => setSubTab(s.key)}
+                  >{s.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Detail body */}
+            <div className="panel__body">
+              {subTab === 'hpo-match' && <HpoMatchView/>}
+              {subTab === 'evidence'  && <EvidenceView/>}
+              {subTab === 'diff'      && <DiffView/>}
+              {subTab === 'tests'     && <TestsView/>}
+              {subTab === 'similar'   && <SimilarView/>}
+              {subTab === 'mdt'       && <MdtView/>}
+              {subTab === 'refs'      && <RefsView/>}
+            </div>
+          </div>
         </div>
+
       </div>
     </>
   )
@@ -324,7 +351,7 @@ function HpoMatchView() {
   const d = HPO_DIAG
   return (
     <div className="scroll-area">
-      <table className="tbl" style={{border:'1px solid var(--border)',borderRadius:'var(--r-3)'}}>
+      <table className="tbl">
         <thead>
           <tr>
             <th style={{width:'30%'}}>指南诊断条件</th>
@@ -344,13 +371,67 @@ function HpoMatchView() {
                 <td style={{fontSize:'var(--fz-12)',color:'var(--text-2)'}}>{m.phenotype}</td>
                 <td><span className={'hit hit--' + hitCls}>{hitLabel}</span></td>
                 <td style={{color:'var(--text-2)'}}>{m.patient}</td>
-                <td className="mono" style={{color:'var(--text-3)'}}>{m.ref}</td>
+                <td><RefCite refStr={m.ref} allRefs={d.references}/></td>
               </tr>
             )
           })}
         </tbody>
       </table>
     </div>
+  )
+}
+
+function RefCite({ refStr, allRefs }) {
+  const spanRef = useRef(null)
+  const [tipRect, setTipRect] = useState(null)
+
+  const nums = (refStr.match(/\d+/g) || []).map(Number)
+  const items = nums.map(n => allRefs.find(r => r.n === n)).filter(Boolean)
+
+  if (!items.length) return <span className="mono" style={{color:'var(--text-4)'}}>{refStr}</span>
+
+  const handleEnter = () => {
+    if (spanRef.current) setTipRect(spanRef.current.getBoundingClientRect())
+  }
+
+  return (
+    <span ref={spanRef} style={{position:'relative',display:'inline-block'}}
+      onMouseEnter={handleEnter} onMouseLeave={() => setTipRect(null)}>
+      <span style={{
+        fontFamily:'var(--font-mono)',fontSize:'var(--fz-11)',fontWeight:600,
+        color:'var(--accent)',background:'var(--accent-soft)',
+        padding:'1px 5px',borderRadius:'var(--r-2)',cursor:'default',
+        border:'1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+      }}>{refStr}</span>
+      {tipRect && (
+        <div style={{
+          position:'fixed',
+          bottom: window.innerHeight - tipRect.top + 8,
+          left: Math.min(tipRect.left, window.innerWidth - 356),
+          width: 340,
+          background:'var(--bg-surface)',
+          border:'1px solid var(--border)',
+          borderRadius:'var(--r-3)',
+          boxShadow:'0 6px 20px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+          padding:'10px 12px',
+          zIndex:9999,
+          pointerEvents:'none',
+          display:'flex',flexDirection:'column',gap:8,
+        }}>
+          <div style={{fontSize:'var(--fz-10)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-4)',marginBottom:2}}>参考文献</div>
+          {items.map(item => (
+            <div key={item.n} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+              <span style={{
+                fontFamily:'var(--font-mono)',fontSize:'var(--fz-11)',fontWeight:700,
+                color:'var(--accent)',background:'var(--accent-soft)',
+                padding:'0 4px',borderRadius:'var(--r-1)',flexShrink:0,lineHeight:'18px',
+              }}>[{item.n}]</span>
+              <span style={{fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.55}}>{item.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </span>
   )
 }
 
@@ -381,7 +462,7 @@ function DiffView() {
   const d = HPO_DIAG.diff
   return (
     <div className="scroll-area">
-      <table className="tbl cmp-table" style={{border:'1px solid var(--border)'}}>
+      <table className="tbl cmp-table">
         <thead>
           <tr>
             <th>特征</th>
@@ -443,7 +524,7 @@ function SimilarView() {
 
 function MdtView() {
   return (
-    <table className="tbl" style={{border:'1px solid var(--border)'}}>
+    <table className="tbl">
       <thead><tr><th style={{width:180}}>推荐科室</th><th>推荐理由</th></tr></thead>
       <tbody>
         {HPO_DIAG.mdt.map((m, i) => (
@@ -464,6 +545,63 @@ function RefsView() {
         <li key={r.n}><span className="mono" style={{color:'var(--text-3)'}}>[{r.n}]</span> {r.text}</li>
       ))}
     </ol>
+  )
+}
+
+/* ============================================================
+   Shared: structured conversation renderer
+   ============================================================ */
+function ConvoMessages({ messages }) {
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:12}}>
+      {messages.map((m, i) => {
+        if (m.from === 'ai') {
+          return (
+            <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+              <div className="chat__avatar chat__avatar--ai" style={{flexShrink:0,marginTop:2}}>AI</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div className="chat__bubble" style={{borderTopLeftRadius:2,display:'inline-block',marginBottom: m.reason || m.choices?.length ? 6 : 0}}>
+                  {m.text}
+                  {m.refs?.map((x, j) => <a key={j} className="cite-sup">[{x.n}]</a>)}
+                </div>
+                {m.reason && (
+                  <div style={{
+                    display:'flex',alignItems:'flex-start',gap:6,
+                    fontSize:'var(--fz-11)',color:'var(--text-3)',lineHeight:1.5,
+                    marginBottom:8,padding:'5px 8px',
+                    background:'var(--n-50)',border:'1px solid var(--border-subtle)',
+                    borderRadius:'var(--r-2)',
+                  }}>
+                    <span style={{color:'var(--text-4)',flexShrink:0,fontWeight:600}}>询问目的</span>
+                    <span>{m.reason}</span>
+                  </div>
+                )}
+                {m.choices?.length > 0 && (
+                  <div className="chat__choices">
+                    {m.choices.map((c, ci) => {
+                      const next = messages[i + 1]
+                      const isChosen = next?.from === 'user' && next?.chosen === c
+                      return (
+                        <span key={ci} className="chat__choice" style={isChosen ? {
+                          borderColor:'var(--accent)',color:'var(--accent)',
+                          background:'var(--accent-soft)',fontWeight:600,
+                        } : {opacity:0.55}}>{c}</span>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        }
+        return (
+          <div key={i} className="chat__msg chat__msg--user">
+            <div className="chat__avatar chat__avatar--user">我</div>
+            <div className="chat__bubble">{m.text}</div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -505,18 +643,8 @@ function HpoRunning() {
           </div>
           <Btn variant="ghost" size="sm">查看完整对话 <IconChevron/></Btn>
         </div>
-        <div className="stage-card__body" style={{padding:'14px 18px'}}>
-          <div className="chat">
-            {r.stage1.messages.slice(-4).map((m, i) => (
-              <div key={i} className={'chat__msg chat__msg--' + m.from}>
-                <div className={'chat__avatar chat__avatar--' + m.from}>{m.from === 'ai' ? 'AI' : '我'}</div>
-                <div className="chat__bubble">
-                  {m.text}
-                  {m.refs && m.refs.map((x,j) => <a key={j} className="cite-sup">[{x.n}]</a>)}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="stage-card__body" style={{padding:'16px 20px'}}>
+          <ConvoMessages messages={r.stage1.messages}/>
         </div>
       </div>
 
@@ -619,6 +747,14 @@ function VcfDone() {
             ))}
           </div>
         </div>
+        <div style={{
+          display:'flex',alignItems:'center',gap:0,
+          borderTop:'1px solid var(--border)',
+          background:'var(--bg-sunken)',
+          borderRadius:'0 0 var(--r-4) var(--r-4)',
+          overflow:'hidden',
+        }}>
+        </div>
       </div>
 
       <div className="panel">
@@ -659,19 +795,88 @@ function VHead() {
       <th style={{width:60}}>ACMG</th>
       <th>基因</th><th>位置</th><th>转录本 / cDNA</th><th>蛋白</th>
       <th>类型</th><th>rsID</th><th>基因型</th><th>AD (AF)</th>
-      <th>SIFT</th><th>PolyPhen2</th><th>CADD</th>
     </tr>
   )
 }
 
 function VSection({ title, subtitle, count }) {
   return (
-    <tr><td colSpan={13} style={{padding:0}}>
+    <tr><td colSpan={10} style={{padding:0}}>
       <div className="vtable__section">
         <div>{title} <span style={{color:'var(--text-4)',textTransform:'none',letterSpacing:0,marginLeft:8,fontWeight:500}}>{subtitle}</span></div>
         <div className="count">{count} 条</div>
       </div>
     </td></tr>
+  )
+}
+
+function DiseaseCard({ d }) {
+  const inheritTone = { AR: 'soft-info', AD: 'soft-warn', XL: 'soft-err', XR: 'soft-err' }
+  return (
+    <div style={{
+      marginBottom: 18,
+      maxWidth: 1050,
+      borderRadius: 'var(--r-3)',
+      border: '1px solid var(--border)',
+      borderLeft: '3px solid var(--accent)',
+      background: 'var(--bg-surface)',
+      overflow: 'hidden',
+    }}>
+      {/* 身份层 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        padding: '10px 14px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg-sunken)',
+      }}>
+        <span style={{fontWeight: 700, fontSize: 'var(--fz-14)', color: 'var(--text-1)'}}>{d.nameCn}</span>
+        <span style={{fontSize: 'var(--fz-12)', color: 'var(--text-3)'}}>{d.nameEn}</span>
+        <div style={{display:'flex', gap: 6, marginLeft: 4, flexWrap: 'wrap'}}>
+          <Badge tone={inheritTone[d.inherit] || 'soft-brand'} pill>{d.inherit}</Badge>
+          {d.omim && <span className="mono" style={{fontSize:'var(--fz-11)',fontWeight:600,padding:'2px 6px',borderRadius:'var(--r-2)',background:'var(--n-100)',color:'var(--text-2)',border:'1px solid var(--border)'}}>{d.omim}</span>}
+          {d.orpha && <span className="mono" style={{fontSize:'var(--fz-11)',fontWeight:600,padding:'2px 6px',borderRadius:'var(--r-2)',background:'var(--n-100)',color:'var(--text-2)',border:'1px solid var(--border)'}}>{d.orpha}</span>}
+        </div>
+      </div>
+
+      <div style={{padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12}}>
+        {/* 临床层 — 描述 */}
+        <p style={{margin: 0, fontSize: 'var(--fz-12)', color: 'var(--text-2)', lineHeight: 1.65, whiteSpace: 'normal', overflowWrap: 'break-word'}}>{d.description}</p>
+
+        {/* 临床层 — 特征 chips */}
+        {d.features?.length > 0 && (
+          <div>
+            <div style={{fontSize:'var(--fz-10)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-4)',marginBottom:6}}>临床特征</div>
+            <div style={{display:'flex', flexWrap:'wrap', gap:5}}>
+              {d.features.map((f, i) => (
+                <span key={i} style={{
+                  fontSize: 'var(--fz-11)', color: 'var(--text-2)',
+                  padding: '2px 8px', borderRadius: 'var(--r-pill)',
+                  background: 'var(--n-100)', border: '1px solid var(--border)',
+                  whiteSpace: 'nowrap',
+                }}>{f}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 溯源层 — 参考文献 */}
+        {d.refs?.length > 0 && (
+          <div style={{
+            borderTop: '1px solid var(--border-subtle)',
+            paddingTop: 10,
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div style={{fontSize:'var(--fz-10)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-4)',marginBottom:2}}>参考文献</div>
+            {d.refs.map(ref => (
+              <div key={ref.n} style={{display:'flex', gap:8, alignItems:'flex-start'}}>
+                <span className="mono" style={{fontSize:'var(--fz-11)',fontWeight:700,color:'var(--accent)',flexShrink:0,lineHeight:'18px'}}>[{ref.n}]</span>
+                <span style={{fontSize:'var(--fz-11)', color:'var(--text-3)', lineHeight:1.55}}>{ref.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -689,13 +894,12 @@ function VRow({ r, expanded, onToggle }) {
         <td className="mono" style={{color:'var(--text-3)'}}>{r.rsid}</td>
         <td><Badge tone="outline">{r.zygosity === 'het' ? '杂合' : r.zygosity === 'hom' ? '纯合' : r.zygosity}</Badge></td>
         <td className="mono">{r.ad}</td>
-        <td className="mono" style={{color: r.sift && r.sift.includes('D') ? 'var(--err-500)' : 'var(--text-3)'}}>{r.sift}</td>
-        <td className="mono" style={{color: r.polyphen && r.polyphen.includes('D') ? 'var(--err-500)' : 'var(--text-3)'}}>{r.polyphen}</td>
-        <td className="mono">{r.cadd}</td>
       </tr>
       {expanded && r.criteria && (
-        <tr><td colSpan={13} style={{padding:0}}>
+        <tr><td colSpan={10} style={{padding:0}}>
           <div className="vdetail">
+            {r.disease && <DiseaseCard d={r.disease}/>}
+
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10,gap:16,flexWrap:'wrap'}}>
               <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)'}}>ACMG 证据条目</div>
               <div style={{fontSize:'var(--fz-12)',color:'var(--text-3)',display:'flex',gap:18,alignItems:'center'}}>
@@ -708,19 +912,34 @@ function VRow({ r, expanded, onToggle }) {
             </div>
             <table className="tbl" style={{border:'1px solid var(--border)',borderRadius:'var(--r-3)',marginBottom:18}}>
               <thead><tr>
-                <th style={{width:64}}>证据</th><th style={{width:54}}>评分</th>
-                <th>判定依据</th><th style={{width:80}}>命中</th><th style={{width:220}}>参考文献 / 数据库</th>
+              <th style={{width:64}}>类型</th><th style={{width:64}}>证据</th><th style={{width:54}}>评分</th>
+                <th>判定依据</th><th style={{width:220}}>参考文献 / 数据库</th>
               </tr></thead>
               <tbody>
-                {r.criteria.map((c,i) => (
+                {r.criteria.map((c,i) => {
+                  const isBenign = c.type === '良性证据'
+                  return (
                   <tr key={i} style={{opacity: c.hit ? 1 : 0.5}}>
-                    <td><b className="mono" style={{color: c.code.startsWith('B') ? 'var(--acmg-b-fg)' : 'var(--acmg-p-fg)',fontWeight:700}}>{c.code}</b></td>
+                    <td>
+                      {c.type && (
+                        <span style={{
+                          display:'inline-block',
+                          fontSize:'var(--fz-11)',fontWeight:600,
+                          padding:'2px 7px',borderRadius:'var(--r-2)',
+                          background: isBenign ? 'var(--acmg-b-bg)' : 'var(--acmg-p-bg)',
+                          color:       isBenign ? 'var(--acmg-b-fg)' : 'var(--acmg-p-fg)',
+                          whiteSpace:'nowrap',
+                        }}>{c.type}</span>
+                      )}
+                    </td>
+                    <td><b className="mono" style={{color: isBenign ? 'var(--acmg-b-fg)' : 'var(--acmg-p-fg)',fontWeight:700}}>{c.code}</b></td>
                     <td className="mono" style={{color:(c.weight||0)>0?'var(--err-700)':(c.weight||0)<0?'var(--ok-700)':'var(--text-4)',fontWeight:600}}>{(c.weight||0)>0?'+':''}{c.weight||0}</td>
                     <td style={{color:'var(--text-2)',lineHeight:1.55,whiteSpace:'normal',padding:'8px 12px'}}>{c.rationale || c.text}</td>
-                    <td>{c.hit ? <span className="hit hit--yes">✓ 命中</span> : <span className="hit hit--unknown">— 不触发</span>}</td>
-                    <td className="mono" style={{color:'var(--text-3)',fontSize:'var(--fz-11)',whiteSpace:'normal'}}>{c.ref || '—'}</td>
+                    {/* <td>{c.hit ? <span className="hit hit--yes">✓ 命中</span> : <span className="hit hit--unknown">— 不触发</span>}</td> */}
+                    <td><RefCite refStr={c.ref || '—'} allRefs={r.literature || []}/></td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
 
@@ -740,22 +959,38 @@ function VRow({ r, expanded, onToggle }) {
                   </tbody>
                 </table>
               </div>
-              <div>
-                {r.geneInfo && (
-                  <>
-                    <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:6}}>基因功能</div>
-                    <div style={{fontSize:'var(--fz-13)',color:'var(--text-2)',lineHeight:1.6,marginBottom:14}}>{r.geneInfo}</div>
-                  </>
-                )}
-                {r.literature && (
-                  <>
-                    <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:6}}>关联文献</div>
-                    <ol style={{margin:0,paddingLeft:18,fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.6}}>
-                      {r.literature.map(l => <li key={l.n}><span className="mono" style={{color:'var(--text-3)'}}>[{l.n}]</span> {l.text}</li>)}
-                    </ol>
-                  </>
-                )}
-              </div>
+              {r.popFreq && (
+                <div>
+                  <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>群体频率</div>
+                  <table className="tbl" style={{border:'1px solid var(--border)'}}>
+                    <thead><tr>
+                      <th>数据库</th><th style={{textAlign:'right'}}>AF</th>
+                      <th style={{borderLeft:'1px solid var(--border)'}}>数据库</th><th style={{textAlign:'right'}}>AF</th>
+                    </tr></thead>
+                    <tbody>
+                      {Array.from({length: Math.ceil(r.popFreq.length / 2)}, (_, i) => {
+                        const fmtAF = row => {
+                          const n = +row.af
+                          return { display: isNaN(n) ? '—' : n === 0 ? '0' : n.toFixed(10).replace(/0+$/, '').replace(/\.$/, ''), n }
+                        }
+                        const a = r.popFreq[i * 2]
+                        const b = r.popFreq[i * 2 + 1]
+                        const fa = fmtAF(a)
+                        return (
+                          <tr key={i}>
+                            <td style={{color:'var(--text-2)'}}>{a.db}</td>
+                            <td className="mono" style={{textAlign:'right', color: fa.n > 0.001 ? 'var(--err-700)' : 'var(--text-1)'}}>{fa.display}</td>
+                            {b ? (() => { const fb = fmtAF(b); return (<>
+                              <td style={{color:'var(--text-2)',borderLeft:'1px solid var(--border)'}}>{b.db}</td>
+                              <td className="mono" style={{textAlign:'right', color: fb.n > 0.001 ? 'var(--err-700)' : 'var(--text-1)'}}>{fb.display}</td>
+                            </>) })() : <><td/><td/></>}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </td></tr>

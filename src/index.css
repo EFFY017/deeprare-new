@@ -1830,6 +1830,18 @@ body { background: var(--bg-sunken); }
   content: ""; position: absolute; left: 0; top: 0; bottom: 0;
   width: 3px; background: var(--accent);
 }
+/* compact flex variant used in left-panel list */
+.disease-rank__row--flex {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background .12s;
+}
+.disease-rank__row--flex:hover { background: var(--bg-hover); }
+.disease-rank__row--flex.is-selected { background: var(--bg-selected); }
 .disease-rank__name-main { font-weight: 600; font-size: var(--fz-14); display: flex; align-items: center; gap: 8px; }
 .disease-rank__name-sub { font-size: var(--fz-11); color: var(--text-3); font-family: var(--font-mono); margin-top: 2px; }
 .disease-rank__omim { font-size: var(--fz-11); color: var(--text-4); font-family: var(--font-mono); }
