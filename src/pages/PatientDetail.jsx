@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Btn, Badge, Acmg, Hpo, StatusDot, MatchBar, Conf, Rank, Alert, Tabs, Segmented } from '../components/primitives'
+import { Btn, Badge, Acmg, Hpo, StatusDot, MatchBar, Conf, Rank, Alert, Tabs, Segmented, Field } from '../components/primitives'
 import {
   IconSearch, IconPlus, IconChevron, IconDownload, IconX, IconDna, IconFile,
   IconSend, IconTrash, IconBeaker, IconUser, IconCheck, IconWarning, IconInfo,
@@ -16,6 +16,7 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
   const [sub, setSub] = useState(route.sub || 'done')
   const [moreOpen, setMoreOpen] = useState(false)
   const [histOpen, setHistOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   useEffect(() => { setTab(route.tab || 'hpo'); setSub(route.sub || 'done') }, [route.id, route.tab, route.sub])
 
@@ -30,7 +31,8 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
         moreOpen={moreOpen} setMoreOpen={setMoreOpen}
         onDelete={openDeleteDialog}
         onBack={() => setRoute({ view: 'list' })}
-        onHistOpen={() => setHistOpen(true)}/>
+        onHistOpen={() => setHistOpen(true)}
+        onEditOpen={() => setEditOpen(true)}/>
 
       <div className="pd-right">
         <div className="pd-tabs-bar">
@@ -50,6 +52,17 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
           {tab === 'vcf'                       && <VcfDone/>}
         </div>
       </div>
+
+      {editOpen && (
+        <EditDialog
+          patient={patient}
+          onClose={() => setEditOpen(false)}
+          onSave={() => {
+            setEditOpen(false)
+            setRoute({ view: 'patient', id: patient.id, tab: 'hpo', sub: 'running' })
+          }}
+        />
+      )}
 
       {histOpen && (
         <div className="overlay" onClick={() => setHistOpen(false)}>
@@ -77,7 +90,7 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
 /* ============================================================
    LeftProfile
    ============================================================ */
-function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack, onHistOpen }) {
+function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack, onHistOpen, onEditOpen }) {
   const p = isHero ? HERO_PATIENT : patient
   const [histTip, setHistTip] = useState(false)
   const history = isHero ? HERO_PATIENT.history : [
@@ -161,7 +174,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
       </div>
 
       <div className="pd-left__foot">
-        <Btn variant="secondary" size="sm" style={{flex:1}}><IconFile/>编辑档案</Btn>
+        <Btn variant="secondary" size="sm" style={{flex:1}} onClick={onEditOpen}><IconFile/>编辑档案</Btn>
         <Btn variant="ghost" size="sm" onClick={() => setMoreOpen(!moreOpen)}>
           更多操作 <IconChevron/>
         </Btn>
@@ -1125,6 +1138,155 @@ function HistoryTab({ onNavigate }) {
 /* ============================================================
    DeleteDialog
    ============================================================ */
+function EditDialog({ patient, onClose, onSave }) {
+  const p = patient
+  const [draft, setDraft] = useState({
+    name:          p.name        || '',
+    gender:        p.gender      || '',
+    age:           String(p.age  || ''),
+    dob:           p.dob         || '',
+    ethnicity:     p.ethnicity   || '',
+    consanguinity: p.consanguinity || '否',
+    familyHistory: p.familyHistory || '',
+    presentText:   p.presentText  || p.summary || '',
+  })
+  const [hpoList, setHpoList]   = useState([...(p.hpoTerms || [])])
+  const [hpoInput, setHpoInput] = useState('')
+
+  const removeHpo = (id) => setHpoList(hpoList.filter(h => h.id !== id))
+  const addHpo = () => {
+    const label = hpoInput.trim()
+    if (!label) return
+    const isId  = /^HP:\d+$/i.test(label)
+    setHpoList([...hpoList, { id: isId ? label.toUpperCase() : `HP:custom_${Date.now()}`, label: isId ? label : label }])
+    setHpoInput('')
+  }
+
+  const SectionHead = ({ n, title, hint }) => (
+    <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:16,paddingBottom:10,borderBottom:'1px solid var(--border)'}}>
+      <span style={{
+        display:'inline-flex',alignItems:'center',justifyContent:'center',
+        width:20,height:20,borderRadius:'50%',flexShrink:0,
+        background:'var(--accent)',color:'#fff',fontSize:'var(--fz-11)',fontWeight:700,
+      }}>{n}</span>
+      <span style={{fontWeight:600,fontSize:'var(--fz-14)',color:'var(--text-1)'}}>{title}</span>
+      {hint && <span style={{fontSize:'var(--fz-12)',color:'var(--text-4)',marginLeft:4}}>{hint}</span>}
+    </div>
+  )
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="dialog dialog--wide" onClick={e => e.stopPropagation()}>
+
+        <div className="dialog__head" style={{alignItems:'center'}}>
+          <div>
+            <div className="dialog__title">编辑患者档案</div>
+            <div className="dialog__desc">{p.name} · {p.id}</div>
+          </div>
+          <Btn variant="ghost" size="sm" onClick={onClose} style={{marginLeft:'auto'}}><IconX/></Btn>
+        </div>
+
+        <div className="dialog__body">
+          <div style={{padding:'24px 28px',display:'flex',flexDirection:'column',gap:32}}>
+
+            {/* ── 1. 基本信息 ── */}
+            <div>
+              <SectionHead n="1" title="基本信息"/>
+              <div className="form-grid">
+                <Field label="姓名" required>
+                  <input className="input" value={draft.name}
+                    onChange={e => setDraft({...draft, name: e.target.value})}/>
+                </Field>
+                <Field label="性别" required>
+                  <select className="select" value={draft.gender}
+                    onChange={e => setDraft({...draft, gender: e.target.value})}>
+                    <option value="">请选择</option>
+                    <option>男</option><option>女</option>
+                  </select>
+                </Field>
+                <Field label="出生日期">
+                  <input className="input" value={draft.dob} placeholder="YYYY-MM-DD"
+                    onChange={e => setDraft({...draft, dob: e.target.value})}/>
+                </Field>
+                <Field label="民族 / 族裔">
+                  <input className="input" value={draft.ethnicity} placeholder="如：汉族"
+                    onChange={e => setDraft({...draft, ethnicity: e.target.value})}/>
+                </Field>
+                <Field label="年龄">
+                  <input className="input" value={draft.age} placeholder="如：14"
+                    onChange={e => setDraft({...draft, age: e.target.value})}/>
+                </Field>
+                <Field label="近亲婚配史">
+                  <select className="select" value={draft.consanguinity}
+                    onChange={e => setDraft({...draft, consanguinity: e.target.value})}>
+                    <option>否</option><option>是</option><option>不详</option>
+                  </select>
+                </Field>
+              </div>
+            </div>
+
+            {/* ── 2. HPO 表型 ── */}
+            <div>
+              <SectionHead n="2" title="HPO 表型" hint={`当前 ${hpoList.length} 项`}/>
+              <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+                {hpoList.map(h => (
+                  <Hpo key={h.id} id={h.id} label={h.label} neg={h.neg}
+                    removable onRemove={() => removeHpo(h.id)}/>
+                ))}
+                {hpoList.length === 0 && (
+                  <span style={{fontSize:'var(--fz-12)',color:'var(--text-4)'}}>暂无 HPO 表型，请在下方添加</span>
+                )}
+              </div>
+              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                <div className="input-wrap" style={{flex:1,maxWidth:360}}>
+                  <span className="input-wrap__icon"><IconSearch/></span>
+                  <input className="input" placeholder="输入 HPO ID（如 HP:0001300）或表型名称..."
+                    value={hpoInput}
+                    onChange={e => setHpoInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addHpo()}/>
+                </div>
+                <Btn variant="secondary" size="sm" onClick={addHpo}><IconPlus/>添加</Btn>
+              </div>
+            </div>
+
+            {/* ── 3. 病史 & 家族史 ── */}
+            <div>
+              <SectionHead n="3" title="病史 & 家族史"/>
+              <div className="form-grid">
+                <div className="field field--wide">
+                  <label className="field__label">病史文本 <span className="req">*</span></label>
+                  <textarea className="textarea" rows={8}
+                    style={{resize:'vertical'}}
+                    placeholder="主诉、现病史、既往史、体格检查、辅助检查..."
+                    value={draft.presentText}
+                    onChange={e => setDraft({...draft, presentText: e.target.value})}/>
+                </div>
+                <div className="field field--wide">
+                  <label className="field__label">家族史</label>
+                  <textarea className="textarea" rows={3}
+                    placeholder="有无类似疾病患者、近亲婚配、新生儿死亡、晚发肝病等"
+                    value={draft.familyHistory}
+                    onChange={e => setDraft({...draft, familyHistory: e.target.value})}/>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div className="dialog__foot" style={{borderTop:'1px solid var(--border)',background:'var(--bg-sunken)'}}>
+          <span style={{flex:1,fontSize:'var(--fz-12)',color:'var(--text-3)',display:'flex',alignItems:'center',gap:6}}>
+            <IconInfo/>保存后将自动触发新一轮 HPO 表型诊断
+          </span>
+          <Btn variant="secondary" onClick={onClose}>取消</Btn>
+          <Btn variant="primary" onClick={onSave}><IconCheck/>保存并重新诊断</Btn>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 export function DeleteDialog({ patient, onClose, onConfirm }) {
   const [confirmText, setConfirmText] = useState('')
   const canDelete = confirmText === patient.name
