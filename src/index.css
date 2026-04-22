@@ -1488,6 +1488,7 @@ body { background: var(--bg-sunken); }
   display: flex; align-items: center; gap: 8px;
   font-weight: 700; font-size: var(--fz-14);
   letter-spacing: -0.01em;
+  flex: 1;
 }
 .shell__logo-mark {
   width: 24px; height: 24px;
@@ -1510,7 +1511,7 @@ body { background: var(--bg-sunken); }
   margin-left: 2px;
   letter-spacing: 0.04em;
 }
-.shell__nav { display: flex; gap: 2px; margin-left: 10px; }
+.shell__nav { display: flex; gap: 2px; }
 .shell__nav button {
   padding: 6px 12px;
   font-size: var(--fz-13);
@@ -1525,7 +1526,7 @@ body { background: var(--bg-sunken); }
 }
 .shell__nav button.is-active { background: var(--accent-soft); color: var(--accent); }
 .shell__nav button:hover { background: var(--bg-hover); }
-.shell__right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.shell__right { flex: 1; justify-content: flex-end; display: flex; align-items: center; gap: 10px; }
 .shell__avatar {
   width: 28px; height: 28px; border-radius: 50%;
   background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
@@ -2007,10 +2008,28 @@ body { background: var(--bg-sunken); }
 .vtable__section .count { font-family: var(--font-mono); color: var(--text-2); }
 
 .vdetail {
-  padding: 16px 22px;
   background: var(--bg-sunken);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+}
+.vdetail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 22px;
+  background: var(--bg-sunken);
+}
+.vdetail__score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fz-12);
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.vdetail__body {
+  padding: 1px 22px 16px;
 }
 
 /* running stage card */
@@ -2199,4 +2218,722 @@ body { background: var(--bg-sunken); }
   border-bottom: 1px solid var(--border);
   background: var(--bg-sunken);
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+
+/* ============================================================
+   PageListV2 · Split-panel patient browser
+   ============================================================ */
+
+.pv2-shell {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Left sidebar ── */
+.pv2-side {
+  border-right: 1px solid var(--border);
+  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pv2-side__head {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pv2-side__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv2-side__title {
+  font-size: var(--fz-14);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pv2-side__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--n-100);
+  color: var(--text-3);
+  font-size: var(--fz-11);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.pv2-side__list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.pv2-side__no-result {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: var(--fz-12);
+  color: var(--text-4);
+}
+
+.pv2-side__foot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sunken);
+  flex-shrink: 0;
+}
+
+/* ── Patient row in sidebar ── */
+.pv2-patient-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.1s;
+  position: relative;
+}
+
+.pv2-patient-row:last-child { border-bottom: none; }
+.pv2-patient-row:hover { background: var(--bg-hover); }
+
+.pv2-patient-row.is-active {
+  background: var(--bg-selected);
+}
+
+.pv2-patient-row.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.pv2-patient-row__avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  font-size: var(--fz-13);
+  font-weight: 700;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: background 0.1s, color 0.1s;
+}
+
+.pv2-patient-row.is-active .pv2-patient-row__avatar {
+  background: var(--accent);
+  color: #fff;
+}
+
+.pv2-patient-row__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pv2-patient-row__name-line {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.pv2-patient-row__name {
+  font-size: var(--fz-13);
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+}
+
+.pv2-patient-row__demog {
+  font-size: var(--fz-11);
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.pv2-patient-row__id {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+}
+
+.pv2-patient-row__dates {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+}
+
+.pv2-patient-row__status {
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+/* ── Right main area ── */
+.pv2-main {
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--bg-sunken);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Empty state ── */
+.pv2-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.pv2-empty__icon { opacity: .55; margin-bottom: 6px; }
+.pv2-empty__title { font-size: var(--fz-16); font-weight: 600; color: var(--text-2); }
+.pv2-empty__desc {
+  font-size: var(--fz-13);
+  color: var(--text-3);
+  max-width: 320px;
+  line-height: 1.65;
+  margin-bottom: 6px;
+}
+
+/* ── Profile component ── */
+.pv2-profile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.pv2-profile__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  box-shadow: var(--sh-1);
+}
+
+.pv2-profile__head-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.pv2-profile__avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: var(--brand-500);
+  color: #fff;
+  font-size: var(--fz-20);
+  font-weight: 700;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  box-shadow: var(--sh-2);
+}
+
+.pv2-profile__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pv2-profile__name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pv2-profile__name {
+  font-size: var(--fz-20);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+
+.pv2-profile__demog {
+  font-size: var(--fz-13);
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.pv2-profile__sub-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pv2-profile__id {
+  font-size: var(--fz-12);
+  color: var(--text-4);
+}
+
+/* ── Profile content body ── */
+.pv2-profile__body {
+  padding: 20px 24px 48px;
+  flex: 1;
+}
+
+/* ── Card component ── */
+.pv2-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  box-shadow: var(--sh-1);
+}
+
+.pv2-card__head {
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pv2-card__title {
+  font-size: var(--fz-13);
+  font-weight: 600;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv2-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--n-100);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.pv2-card__body {
+  padding: 18px;
+}
+
+/* ── Info two-column grid ── */
+.pv2-info-grid {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 0;
+}
+
+.pv2-info-col { padding: 0; }
+
+.pv2-info-col--divider {
+  border-left: 1px solid var(--border);
+  padding-left: 22px;
+  margin-left: 22px;
+}
+
+.pv2-section-label {
+  font-size: var(--fz-11);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-4);
+  margin: 0 0 10px;
+}
+
+/* ── Key-value demographic list ── */
+.pv2-kv {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 5px 8px;
+  font-size: var(--fz-12);
+  margin: 0;
+}
+
+.pv2-kv dt {
+  color: var(--text-4);
+  align-self: start;
+  padding-top: 1px;
+}
+
+.pv2-kv dd {
+  margin: 0;
+  color: var(--text-1);
+}
+
+/* ── Symptoms chip ── */
+.pv2-symptoms-chip {
+  font-size: var(--fz-13);
+  font-weight: 500;
+  color: var(--text-1);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: 8px 12px;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+/* ── Family history ── */
+.pv2-family-history {
+  font-size: var(--fz-12);
+  color: var(--text-2);
+  line-height: 1.65;
+}
+
+.pv2-family-history__label {
+  font-weight: 600;
+  color: var(--text-2);
+  margin-right: 4px;
+}
+
+.pv2-family-history__label::after {
+  content: "：";
+}
+
+/* ── HPO cloud ── */
+.pv2-hpo-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pv2-hpo-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* ── Task type badge ── */
+.pv2-type-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--r-2);
+  font-family: var(--font-mono);
+  font-size: var(--fz-11);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.pv2-type-tag--hpo {
+  background: var(--info-50);
+  color: var(--info-700);
+}
+
+.pv2-type-tag--vcf {
+  background: var(--ok-50);
+  color: var(--ok-700);
+}
+
+/* ── Task result cell ── */
+.pv2-result-cell {
+  font-size: var(--fz-13);
+  color: var(--text-2);
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Task empty ── */
+.pv2-task-empty {
+  padding: 28px;
+  text-align: center;
+  font-size: var(--fz-13);
+  color: var(--text-4);
+}
+
+/* ── Edit mode ── */
+.pv2-card--editing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(58,96,184,.09), var(--sh-1);
+}
+
+.pv2-card--editing .pv2-card__head {
+  background: var(--accent-soft);
+  border-bottom-color: var(--brand-100);
+}
+
+.pv2-edit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pv2-edit-badge::before {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.7);
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+/* Edit form layout */
+.pv2-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pv2-edit-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* HPO add button */
+.pv2-hpo-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--r-2);
+  border: 1.5px dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-3);
+  font-size: var(--fz-12);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+
+.pv2-hpo-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* HPO add inline form */
+.pv2-hpo-add-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+}
+
+.pv2-hpo-add-id    { width: 120px; flex-shrink: 0; }
+.pv2-hpo-add-label { flex: 1; }
+
+/* ══════════════════════════════════════════════
+   Save Confirm Dialog
+   ══════════════════════════════════════════════ */
+
+.pv2-confirm-dialog {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-5);
+  box-shadow: var(--sh-pop);
+  width: 520px;
+  overflow: hidden;
+  animation: fade-in .14s ease-out;
+}
+
+/* Header */
+.pv2-confirm-dialog__head {
+  display: flex;
+  gap: 14px;
+  padding: 20px 24px 16px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+}
+
+.pv2-confirm-dialog__icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pv2-confirm-dialog__copy { flex: 1; }
+
+.pv2-confirm-dialog__title {
+  font-size: var(--fz-15);
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0 0 5px;
+  letter-spacing: -0.01em;
+}
+
+.pv2-confirm-dialog__desc {
+  font-size: var(--fz-13);
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+/* Option cards */
+.pv2-confirm-dialog__options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--border);
+}
+
+.pv2-diag-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-4);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color .12s, background .12s, box-shadow .12s;
+  position: relative;
+}
+
+.pv2-diag-option:hover {
+  border-color: var(--n-300);
+  box-shadow: var(--sh-2);
+}
+
+/* Save option */
+.pv2-diag-option--save .pv2-diag-option__icon {
+  color: var(--text-3);
+  background: var(--n-100);
+}
+.pv2-diag-option--save:hover { border-color: var(--n-300); }
+
+/* VCF option */
+.pv2-diag-option--vcf .pv2-diag-option__icon {
+  color: var(--ok-700);
+  background: var(--ok-50);
+}
+.pv2-diag-option--vcf:hover { 
+  border-color: var(--accent);
+}
+
+
+.pv2-diag-option--hpo .pv2-diag-option__icon {
+  color: var(--accent);
+  background: var(--brand-100);
+}
+.pv2-diag-option--hpo:hover {
+  border-color: var(--accent);
+}
+.pv2-diag-option--hpo .pv2-diag-option__label {
+  color: var(--accent);
+}
+
+/* Selected state */
+.pv2-diag-option.is-selected {
+  border-color: var(--accent) !important;
+  /* background: var(--brand-50) !important; */
+  box-shadow: var(--sh-2);
+}
+
+/* Option parts */
+.pv2-diag-option__icon {
+  width: 30px; height: 30px;
+  border-radius: var(--r-3);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+
+.pv2-diag-option__body { flex: 1; }
+
+.pv2-diag-option__label {
+  font-size: var(--fz-13);
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 3px;
+}
+
+.pv2-diag-option__hint {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+  line-height: 1.5;
+}
+
+/* Check indicator (selected card) */
+.pv2-diag-option__check {
+  position: absolute;
+  bottom: 10px; right: 10px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: grid; place-items: center;
+}
+
+
+/* Recommended badge on HPO card */
+.pv2-diag-option__recommended {
+  position: absolute;
+  top: 10px; right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--brand-100);
+  border-radius: var(--r-pill);
+  padding: 1px 7px;
+  line-height: 16px;
+}
+
+/* Footer */
+.pv2-confirm-dialog__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--bg-sunken);
+  gap: 12px;
 }

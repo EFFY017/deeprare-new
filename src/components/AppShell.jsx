@@ -3,8 +3,9 @@ import { IconSettings } from './icons'
 
 export default function AppShell({ route, setRoute, children }) {
   const nav = [
-    { key: 'new',  label: '新建诊断' },
-    { key: 'list', label: '患者列表' },
+    { key: 'new',    label: '新建诊断' },
+    { key: 'list',   label: '患者列表' },
+    { key: 'listv2', label: '患者列表 v2' },
   ]
   const isPatient = route.view === 'patient'
   return (
@@ -30,7 +31,7 @@ export default function AppShell({ route, setRoute, children }) {
         </nav>
         <div className="shell__right">
           <Btn variant="ghost" size="sm"><IconSettings/></Btn>
-          <div className="shell__avatar">WC</div>
+          <div className="shell__avatar">U</div>
         </div>
       </header>
       <main className="shell__content">{children}</main>

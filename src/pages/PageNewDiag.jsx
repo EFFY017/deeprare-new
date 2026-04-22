@@ -40,9 +40,9 @@ export default function PageNewDiag({ setRoute }) {
           <h1>新建诊断</h1>
           <div className="desc">选择已有患者或创建新患者，填写诊断输入后即可发起 AI 推理。</div>
         </div>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Btn variant="ghost" size="sm">保存草稿</Btn>
-        </div>
+        </div> */}
       </div>
 
       <div className="page-body">

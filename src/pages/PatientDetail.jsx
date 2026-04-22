@@ -104,7 +104,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
           <div className="patient-id__avatar">{p.name.slice(-1)}</div>
           <div style={{flex:1,minWidth:0}}>
             <div className="patient-id__name">{p.name}</div>
-            <div className="patient-id__meta">{p.id} · {p.gender} · {p.age}岁</div>
+            <div className="patient-id__meta">{p.id} · {p.gender}</div>
           </div>
           <div style={{position:'relative',flexShrink:0}}>
             <button
@@ -894,6 +894,23 @@ function DiseaseCard({ d }) {
 }
 
 function VRow({ r, expanded, onToggle }) {
+  const [vTab, setVTab] = useState('acmg')
+
+  useEffect(() => {
+    if (expanded) setVTab('acmg')
+  }, [expanded])
+
+  const vtabs = [
+    { key: 'acmg',      label: 'ACMG 详情' },
+    { key: 'disease',   label: '相关疾病' },
+    { key: 'synthesis', label: '综合分析' },
+    { key: 'refs',      label: '数据库/参考文献' },
+  ]
+
+  const acmgScore = r.criteria ? r.criteria.filter(c => c.hit).reduce((s, c) => s + (c.weight || 0), 0) : 0
+  const acmgHit   = r.criteria ? r.criteria.filter(c => c.hit).length : 0
+  const acmgTotal = r.criteria ? r.criteria.length : 0
+
   return (
     <>
       <tr className={expanded ? 'is-expanded' : ''} onClick={() => onToggle(r.id)} style={{cursor:'pointer'}}>
@@ -908,107 +925,215 @@ function VRow({ r, expanded, onToggle }) {
         <td><Badge tone="outline">{r.zygosity === 'het' ? '杂合' : r.zygosity === 'hom' ? '纯合' : r.zygosity}</Badge></td>
         <td className="mono">{r.ad}</td>
       </tr>
-      {expanded && r.criteria && (
+      {expanded && (
         <tr><td colSpan={10} style={{padding:0}}>
           <div className="vdetail">
-            {r.disease && <DiseaseCard d={r.disease}/>}
-
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10,gap:16,flexWrap:'wrap'}}>
-              <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)'}}>ACMG 证据条目</div>
-              <div style={{fontSize:'var(--fz-12)',color:'var(--text-3)',display:'flex',gap:18,alignItems:'center'}}>
-                <span>综合评级 <Acmg k={r.acmg}/></span>
-                <span>累计评分 <b className="mono" style={{color:'var(--text-1)',fontSize:'var(--fz-14)'}}>
-                  {(r.criteria.filter(c=>c.hit).reduce((s,c)=>s+(c.weight||0),0)>0?'+':'') + r.criteria.filter(c=>c.hit).reduce((s,c)=>s+(c.weight||0),0)}
-                </b> 分 <span style={{color:'var(--text-4)'}}>(致病阈值 ≥6)</span></span>
-                <span>命中 <b className="mono" style={{color:'var(--text-1)'}}>{r.criteria.filter(c=>c.hit).length}</b> / {r.criteria.length} 条</span>
+            <div className="vdetail__head">
+              <div className="subtabs">
+                {vtabs.map(t => (
+                  <button
+                    key={t.key}
+                    className={'subtabs__item' + (vTab === t.key ? ' is-active' : '')}
+                    onClick={() => setVTab(t.key)}
+                  >{t.label}</button>
+                ))}
               </div>
             </div>
-            <table className="tbl" style={{border:'1px solid var(--border)',borderRadius:'var(--r-3)',marginBottom:18}}>
-              <thead><tr>
-              <th style={{width:64}}>类型</th><th style={{width:64}}>证据</th><th style={{width:54}}>评分</th>
-                <th>判定依据</th><th style={{width:220}}>参考文献 / 数据库</th>
-              </tr></thead>
-              <tbody>
-                {r.criteria.map((c,i) => {
-                  const isBenign = c.type === '良性证据'
-                  return (
-                  <tr key={i} style={{opacity: c.hit ? 1 : 0.5}}>
-                    <td>
-                      {c.type && (
-                        <span style={{
-                          display:'inline-block',
-                          fontSize:'var(--fz-11)',fontWeight:600,
-                          padding:'2px 7px',borderRadius:'var(--r-2)',
-                          background: isBenign ? 'var(--acmg-b-bg)' : 'var(--acmg-p-bg)',
-                          color:       isBenign ? 'var(--acmg-b-fg)' : 'var(--acmg-p-fg)',
-                          whiteSpace:'nowrap',
-                        }}>{c.type}</span>
-                      )}
-                    </td>
-                    <td><b className="mono" style={{color: isBenign ? 'var(--acmg-b-fg)' : 'var(--acmg-p-fg)',fontWeight:700}}>{c.code}</b></td>
-                    <td className="mono" style={{color:(c.weight||0)>0?'var(--err-700)':(c.weight||0)<0?'var(--ok-700)':'var(--text-4)',fontWeight:600}}>{(c.weight||0)>0?'+':''}{c.weight||0}</td>
-                    <td style={{color:'var(--text-2)',lineHeight:1.55,whiteSpace:'normal',padding:'8px 12px'}}>{c.rationale || c.text}</td>
-                    {/* <td>{c.hit ? <span className="hit hit--yes">✓ 命中</span> : <span className="hit hit--unknown">— 不触发</span>}</td> */}
-                    <td><RefCite refStr={c.ref || '—'} allRefs={r.literature || []}/></td>
-                  </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-
-            <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:24}}>
-              <div>
-                <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>预测工具详情</div>
-                <table className="tbl" style={{border:'1px solid var(--border)'}}>
-                  <thead><tr><th>工具</th><th>分数</th><th>结论</th></tr></thead>
-                  <tbody>
-                    {r.predictions && r.predictions.map((p, i) => (
-                      <tr key={i}>
-                        <td style={{fontWeight:600}}>{p.tool}</td>
-                        <td className="mono">{p.score}</td>
-                        <td style={{color: p.label.toLowerCase().includes('no') || p.label.toLowerCase().includes('benign') ? 'var(--text-3)' : 'var(--err-700)'}}>{p.label}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {r.popFreq && (
-                <div>
-                  <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>群体频率</div>
-                  <table className="tbl" style={{border:'1px solid var(--border)'}}>
-                    <thead><tr>
-                      <th>数据库</th><th style={{textAlign:'right'}}>AF</th>
-                      <th style={{borderLeft:'1px solid var(--border)'}}>数据库</th><th style={{textAlign:'right'}}>AF</th>
-                    </tr></thead>
-                    <tbody>
-                      {Array.from({length: Math.ceil(r.popFreq.length / 2)}, (_, i) => {
-                        const fmtAF = row => {
-                          const n = +row.af
-                          return { display: isNaN(n) ? '—' : n === 0 ? '0' : n.toFixed(10).replace(/0+$/, '').replace(/\.$/, ''), n }
-                        }
-                        const a = r.popFreq[i * 2]
-                        const b = r.popFreq[i * 2 + 1]
-                        const fa = fmtAF(a)
-                        return (
-                          <tr key={i}>
-                            <td style={{color:'var(--text-2)'}}>{a.db}</td>
-                            <td className="mono" style={{textAlign:'right', color: fa.n > 0.001 ? 'var(--err-700)' : 'var(--text-1)'}}>{fa.display}</td>
-                            {b ? (() => { const fb = fmtAF(b); return (<>
-                              <td style={{color:'var(--text-2)',borderLeft:'1px solid var(--border)'}}>{b.db}</td>
-                              <td className="mono" style={{textAlign:'right', color: fb.n > 0.001 ? 'var(--err-700)' : 'var(--text-1)'}}>{fb.display}</td>
-                            </>) })() : <><td/><td/></>}
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <div className="vdetail__body">
+              {vTab === 'acmg'      && <VTabAcmg r={r}/>}
+              {vTab === 'disease'   && <VTabDisease r={r}/>}
+              {vTab === 'synthesis' && <VTabSynthesis r={r}/>}
+              {vTab === 'refs'      && <VTabRefs r={r}/>}
             </div>
           </div>
         </td></tr>
       )}
     </>
+  )
+}
+
+function VTabAcmg({ r }) {
+  if (!r.criteria) return <VTabEmpty text="暂无 ACMG 证据详情"/>
+  const score = r.criteria.filter(c => c.hit).reduce((s, c) => s + (c.weight || 0), 0)
+  const hit   = r.criteria.filter(c => c.hit).length
+  return (
+    <>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,marginBottom:10,flexWrap:'wrap'}}>
+        {/* <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)'}}>ACMG 证据条目</div> */}
+        <div style={{fontSize:'var(--fz-12)',color:'var(--text-3)',display:'flex',gap:10,alignItems:'center'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:6}}>综合评级  <Acmg k={r.acmg}/></span>
+          <span>累计评分 <b className="mono" style={{color:'var(--text-1)',fontSize:'var(--fz-14)'}}>
+            {score > 0 ? '+' : ''}{score}
+          </b> 分 <span style={{color:'var(--text-4)'}}>(致病阈值 ≥6)</span></span>
+          <span>命中 <b className="mono" style={{color:'var(--text-1)'}}>{hit}</b> / {r.criteria.length} 条</span>
+        </div>
+      </div>
+      <table className="tbl" style={{border:'1px solid var(--border)',borderRadius:'var(--r-3)',marginBottom:20}}>
+        <thead><tr>
+          <th style={{width:64}}>类型</th><th style={{width:64}}>证据</th><th style={{width:54}}>评分</th>
+          <th>判定依据</th><th style={{width:220}}>参考文献 / 数据库</th>
+        </tr></thead>
+        <tbody>
+          {r.criteria.map((c, i) => {
+            const isBenign = c.type === '良性证据'
+            return (
+              <tr key={i} style={{opacity: c.hit ? 1 : 0.5}}>
+                <td>
+                  {c.type && (
+                    <span style={{
+                      display:'inline-block',fontSize:'var(--fz-11)',fontWeight:600,
+                      padding:'2px 7px',borderRadius:'var(--r-2)',whiteSpace:'nowrap',
+                      background: isBenign ? 'var(--acmg-b-bg)' : 'var(--acmg-p-bg)',
+                      color:      isBenign ? 'var(--acmg-b-fg)' : 'var(--acmg-p-fg)',
+                    }}>{c.type}</span>
+                  )}
+                </td>
+                <td><b className="mono" style={{color: isBenign ? 'var(--acmg-b-fg)' : 'var(--acmg-p-fg)',fontWeight:700}}>{c.code}</b></td>
+                <td className="mono" style={{fontWeight:600,color:(c.weight||0)>0?'var(--err-700)':(c.weight||0)<0?'var(--ok-700)':'var(--text-4)'}}>
+                  {(c.weight||0)>0?'+':''}{c.weight||0}
+                </td>
+                <td style={{color:'var(--text-2)',lineHeight:1.55,whiteSpace:'normal',padding:'8px 12px'}}>{c.rationale || c.text}</td>
+                <td><RefCite refStr={c.ref || '—'} allRefs={r.literature || []}/></td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+
+      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:24}}>
+        {r.predictions && (
+          <div>
+            <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>预测工具详情</div>
+            <table className="tbl cmp-table">
+              <thead><tr><th>工具</th><th>分数</th><th>结论</th></tr></thead>
+              <tbody>
+                {r.predictions.map((p, i) => (
+                  <tr key={i}>
+                    <td className="t-3">{p.tool}</td>
+                    <td className="mono fw-6">{p.score}</td>
+                    <td style={{color: p.label.toLowerCase().includes('no') || p.label.toLowerCase().includes('benign') ? 'var(--text-3)' : 'var(--err-700)'}}>{p.label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {r.popFreq && (
+          <div>
+            <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>群体频率</div>
+            <table className="tbl cmp-table">
+              <thead><tr>
+                <th>数据库</th><th className="num">AF</th>
+                <th>数据库</th><th className="num">AF</th>
+              </tr></thead>
+              <tbody>
+                {Array.from({length: Math.ceil(r.popFreq.length / 2)}, (_, i) => {
+                  const fmtAF = row => {
+                    const n = +row.af
+                    return { display: isNaN(n) ? '—' : n === 0 ? '0' : n.toFixed(10).replace(/0+$/, '').replace(/\.$/, ''), n }
+                  }
+                  const a = r.popFreq[i * 2]
+                  const b = r.popFreq[i * 2 + 1]
+                  const fa = fmtAF(a)
+                  return (
+                    <tr key={i}>
+                      <td className="t-3">{a.db}</td>
+                      <td className="mono num" style={{color: fa.n > 0.001 ? 'var(--err-700)' : 'var(--text-1)'}}>{fa.display}</td>
+                      {b ? (() => { const fb = fmtAF(b); return (<>
+                        <td className="t-3">{b.db}</td>
+                        <td className="mono num" style={{color: fb.n > 0.001 ? 'var(--err-700)' : 'var(--text-1)'}}>{fb.display}</td>
+                      </>) })() : <><td/><td/></>}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function VTabDisease({ r }) {
+  if (!r.disease) return <VTabEmpty text="暂无相关疾病信息"/>
+  return <DiseaseCard d={r.disease}/>
+}
+
+function VTabSynthesis({ r }) {
+  const text = r.synthesis || r.geneInfo
+  if (!text) return <VTabEmpty text="暂无综合分析内容"/>
+  return (
+    <div style={{maxWidth:820}}>
+      {text.split('\n\n').map((para, i) => (
+        <p key={i} style={{margin:'0 0 14px',fontSize:'var(--fz-13)',color:'var(--text-2)',lineHeight:1.8}}>{para}</p>
+      ))}
+    </div>
+  )
+}
+
+function VTabRefs({ r }) {
+  const SectionLabel = ({ children }) => (
+    <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>
+      {children}
+    </div>
+  )
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      {r.databases?.length > 0 && (
+        <div>
+          <SectionLabel>数据库</SectionLabel>
+          <div style={{display:'flex',flexDirection:'column',gap:0,border:'1px solid var(--border)',borderRadius:'var(--r-3)',overflow:'hidden'}}>
+            {r.databases.map((db, i) => (
+              <div key={i} style={{
+                display:'flex',alignItems:'center',gap:12,
+                padding:'8px 12px',
+                borderBottom: i < r.databases.length - 1 ? '1px solid var(--border)' : 'none',
+                background:'var(--bg-surface)',
+              }}>
+                <span style={{width:72,flexShrink:0,fontSize:'var(--fz-12)',fontWeight:600,color:'var(--text-2)'}}>{db.name}</span>
+                <a href={db.url} target="_blank" rel="noreferrer" className="mono" style={{
+                  fontSize:'var(--fz-12)',color:'var(--accent)',
+                  textDecoration:'none',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.textDecoration='underline'}
+                  onMouseLeave={e => e.currentTarget.style.textDecoration='none'}
+                >{db.value}</a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {r.literature?.length > 0 && (
+        <div>
+          <SectionLabel>参考文献</SectionLabel>
+          <div style={{display:'flex',flexDirection:'column',gap:10,fontSize:'var(--fz-13)',lineHeight:1.65,color:'var(--text-2)'}}>
+            {r.literature.map(ref => (
+              <div key={ref.n} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                <span className="mono" style={{
+                  fontSize:'var(--fz-11)',fontWeight:700,color:'var(--accent)',
+                  background:'var(--accent-soft)',padding:'1px 5px',
+                  borderRadius:'var(--r-1)',flexShrink:0,lineHeight:'20px',
+                }}>[{ref.n}]</span>
+                <span>{ref.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!r.databases?.length && !r.literature?.length && <VTabEmpty text="暂无数据库及文献信息"/>}
+    </div>
+  )
+}
+
+function VTabEmpty({ text }) {
+  return (
+    <div style={{padding:'32px 0',textAlign:'center',fontSize:'var(--fz-13)',color:'var(--text-4)'}}>
+      {text}
+    </div>
   )
 }
 

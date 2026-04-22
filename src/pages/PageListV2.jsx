@@ -1,0 +1,627 @@
+import { useState, useMemo, useEffect } from 'react'
+import { Btn, StatusDot, Hpo } from '../components/primitives'
+import { IconSearch, IconPlus, IconChevron, IconX, IconCheck } from '../components/icons'
+import { PATIENTS, HERO_PATIENT } from '../data/mockData'
+
+const IconPencil = () => (
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+    <path d="M9 2.5 11.5 5 5 11.5H2.5V9L9 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    <path d="M7.5 4 10 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>
+)
+
+/* ---------- Per-patient task records ---------- */
+const TASK_MAP = {
+  'P-2024-0317': [
+    { id:'H-007', type:'VCF', time:'2025-01-14 20:36', result:'ATP7B 复合杂合 (c.2333G>T / c.3443T>C)，确诊 Wilson Disease', status:'done' },
+    { id:'H-006', type:'HPO', time:'2024-11-21 16:38', result:'Top 1 Wilson Disease 匹配 92.4%，置信度 94%', status:'done' },
+    { id:'H-005', type:'HPO', time:'2024-10-08 11:02', result:'Top 1 Juvenile Huntington Disease 61%，建议补充 K-F 环检查', status:'done' },
+    { id:'H-004', type:'VCF', time:'2024-09-12 14:22', result:'VCF 文件 chromosome 命名不匹配，已终止', status:'failed' },
+    { id:'H-003', type:'HPO', time:'2024-09-02 09:18', result:'提示铜代谢障碍，建议完善铜蓝蛋白检查', status:'done' },
+  ],
+  'P-2024-0298': [
+    { id:'H-021', type:'HPO', time:'2025-01-08 14:20', result:'Top 1 Down Syndrome 匹配 84.2%，置信度 89%', status:'done' },
+  ],
+  'P-2025-0011': [
+    { id:'H-031', type:'HPO', time:'2025-01-15 10:05', result:'AI 推理进行中...', status:'running' },
+    { id:'H-030', type:'VCF', time:'2025-01-10 09:22', result:'变异筛选完成，候选基因 3 个', status:'done' },
+  ],
+  'P-2024-0256': [
+    { id:'H-042', type:'VCF', time:'2024-12-28 16:44', result:'FBN1 致病变异 (p.Cys1663Ser)，确诊 Marfan Syndrome', status:'done' },
+    { id:'H-041', type:'HPO', time:'2024-11-15 11:30', result:'Top 1 Marfan Syndrome 匹配 88.6%', status:'done' },
+  ],
+  'P-2024-0244': [
+    { id:'H-051', type:'HPO', time:'2024-12-02 09:15', result:'Top 1 Duchenne 肌营养不良 匹配 76.3%，待复核', status:'done' },
+  ],
+  'P-2024-0211': [
+    { id:'H-062', type:'VCF', time:'2024-11-09 20:11', result:'HMBS 致病变异，确诊急性间歇性血卟啉病', status:'done' },
+    { id:'H-061', type:'HPO', time:'2024-09-30 13:45', result:'Top 1 急性间歇性血卟啉病 匹配 81.5%', status:'done' },
+  ],
+  'P-2025-0018': [
+    { id:'H-071', type:'HPO', time:'2025-01-15 08:30', result:'AI 推理进行中...', status:'running' },
+  ],
+  'P-2024-0189': [
+    { id:'H-082', type:'VCF', time:'2024-10-15 17:22', result:'RPGR 致病变异，确诊 X 染色体连锁视网膜色素变性', status:'done' },
+    { id:'H-081', type:'HPO', time:'2024-08-11 10:30', result:'Top 1 视网膜色素变性 匹配 91.2%', status:'done' },
+  ],
+  'P-2024-0167': [
+    { id:'H-091', type:'HPO', time:'2024-09-21 14:05', result:'Top 1 成骨不全症 Type I 匹配 86.7%', status:'done' },
+  ],
+  'P-2024-0144': [
+    { id:'H-101', type:'HPO', time:'2024-08-18 10:22', result:'HPO 表型信息不足，无法完成诊断', status:'failed' },
+  ],
+}
+
+/* ---------- Supplemental patient info ---------- */
+const PATIENT_EXTRA = {
+  'P-2024-0298': { dob:'2019-05-10', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'发育迟缓 · 特殊面容 · 房间隔缺损', familyHistory:'父母非近亲结婚，家族无类似病史。' },
+  'P-2025-0011': { dob:'2022-09-01', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'喂养困难 · 肌张力低下 · 新生儿筛查异常', familyHistory:'父母体健，非近亲婚配，家族无遗传病史。' },
+  'P-2024-0256': { dob:'2002-04-14', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'高个长指 · 晶状体脱位 · 主动脉根部扩张', familyHistory:'父亲体型高挑，有主动脉相关心脏病史。' },
+  'P-2024-0244': { dob:'2015-07-03', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'进行性肌无力 · 腓肠肌肥大 · CK 显著升高', familyHistory:'母亲携带者，舅舅有类似肌病史。' },
+  'P-2024-0211': { dob:'1993-03-28', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'反复发作性腹痛 · 皮肤光敏感 · 尿液变红', familyHistory:'父亲有不明原因腹痛发作史。' },
+  'P-2025-0018': { dob:'2019-11-20', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'反复感染 · 湿疹 · 血小板减少', familyHistory:'父母非近亲，家族无免疫缺陷病史。' },
+  'P-2024-0189': { dob:'2007-08-11', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'夜盲 · 视野缩窄 · 视网膜色素沉着', familyHistory:'外祖父有视力减退病史，疑似遗传性视网膜病变。' },
+  'P-2024-0167': { dob:'1996-12-05', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'反复骨折 · 蓝巩膜 · 听力下降', familyHistory:'母亲有轻度骨质疏松，具体诊断不详。' },
+  'P-2024-0144': { dob:'1981-06-18', ethnicity:'汉族', consanguinity:'否', coreSymptoms:'进行性痉挛步态 · 下肢僵硬', familyHistory:'父亲有步态异常史，未确诊。' },
+}
+
+const STATUS_META = {
+  diagnosed: { kind:'ok',      label:'诊断完成' },
+  running:   { kind:'running', label:'诊断中' },
+  review:    { kind:'warn',    label:'待查看' },
+  failed:    { kind:'err',     label:'诊断失败' },
+}
+
+export default function PageListV2({ setRoute }) {
+  const [q, setQ]               = useState('')
+  const [selectedId, setSelectedId] = useState(null)
+
+  const filtered = useMemo(() => {
+    if (!q) return PATIENTS
+    const qq = q.toLowerCase()
+    return PATIENTS.filter(p =>
+      p.name.includes(q) ||
+      p.id.toLowerCase().includes(qq) ||
+      (p.summary && p.summary.toLowerCase().includes(qq))
+    )
+  }, [q])
+
+  /* Merge supplemental data for selected patient */
+  const patient = useMemo(() => {
+    if (!selectedId) return null
+    const base = PATIENTS.find(p => p.id === selectedId)
+    if (!base) return null
+    if (base.id === HERO_PATIENT.id) return { ...base, ...HERO_PATIENT }
+    const extra = PATIENT_EXTRA[base.id] || {}
+    return { ...base, ...extra }
+  }, [selectedId])
+
+  return (
+    <div className="pv2-shell">
+
+      {/* ── LEFT SIDEBAR ── */}
+      <aside className="pv2-side">
+        <div className="pv2-side__head">
+          <div className="pv2-side__title-row">
+            <span className="pv2-side__title">患者列表</span>
+            <span className="pv2-side__count">{filtered.length}</span>
+          </div>
+          <div className="input-wrap">
+            <span className="input-wrap__icon"><IconSearch /></span>
+            <input
+              className="input"
+              placeholder="搜索姓名、ID、症状..."
+              value={q}
+              onChange={e => setQ(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="pv2-side__list">
+          {filtered.map(p => {
+            const sm = STATUS_META[p.status] || { kind:'queue', label:'—' }
+            const isActive = selectedId === p.id
+            return (
+              <div
+                key={p.id}
+                className={'pv2-patient-row' + (isActive ? ' is-active' : '')}
+                onClick={() => setSelectedId(p.id)}
+              >
+                <div className="pv2-patient-row__avatar">{p.name.slice(-1)}</div>
+                <div className="pv2-patient-row__info">
+                  <div className="pv2-patient-row__name-line">
+                    <span className="pv2-patient-row__name">{p.name}</span>
+                    <span className="pv2-patient-row__demog">{p.gender} · {p.age}岁</span>
+                  </div>
+                  <div className="pv2-patient-row__id mono">{p.id}</div>
+                  <div className="pv2-patient-row__dates">
+                    末次诊断 {p.lastAt}
+                  </div>
+                </div>
+                <div className="pv2-patient-row__status">
+                  {p.status === 'running'
+                    ? <span className="running-pill"><span className="spinner" />诊断中</span>
+                    : <StatusDot kind={sm.kind}>{sm.label}</StatusDot>
+                  }
+                </div>
+              </div>
+            )
+          })}
+          {filtered.length === 0 && (
+            <div className="pv2-side__no-result">暂无匹配患者</div>
+          )}
+        </div>
+
+        {/* <div className="pv2-side__foot">
+          <Btn variant="primary" size="sm" style={{ width:'100%', justifyContent:'center' }} onClick={() => setRoute({ view:'new' })}>
+            <IconPlus />新建诊断
+          </Btn>
+        </div> */}
+      </aside>
+
+      {/* ── RIGHT MAIN ── */}
+      <main className="pv2-main">
+        {!patient
+          ? <EmptyState setRoute={setRoute} />
+          : <PatientPanel patient={patient} setRoute={setRoute} />
+        }
+      </main>
+
+    </div>
+  )
+}
+
+/* ── Empty state ── */
+function EmptyState({ setRoute }) {
+  return (
+    <div className="pv2-empty">
+      <div className="pv2-empty__icon">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+          <circle cx="26" cy="26" r="24" stroke="var(--border-strong)" strokeWidth="1.5" />
+          <circle cx="26" cy="21" r="8" stroke="var(--n-300)" strokeWidth="1.5" />
+          <path d="M10 44c2-9 8.5-14 16-14s14 5 16 14" stroke="var(--n-300)" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div className="pv2-empty__title">从左侧选择患者</div>
+      <div className="pv2-empty__desc">点击左侧列表中的患者，右侧将展示其档案信息与诊断任务记录。</div>
+      <Btn variant="secondary" size="sm" onClick={() => setRoute({ view:'new' })}>
+        <IconPlus />新建诊断
+      </Btn>
+    </div>
+  )
+}
+
+/* ── Patient panel ── */
+function PatientPanel({ patient, setRoute }) {
+  const tasks = TASK_MAP[patient.id] || []
+  const sm    = STATUS_META[patient.status] || { kind:'queue', label:'—' }
+
+  /* ── Edit state ── */
+  const [editing,     setEditing]     = useState(false)
+  const [draft,       setDraft]       = useState(null)
+  const [saved,       setSaved]       = useState(null)   // persisted local overrides
+  const [addingHpo,   setAddingHpo]   = useState(false)
+  const [newHpoId,    setNewHpoId]    = useState('')
+  const [newHpoLabel, setNewHpoLabel] = useState('')
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  /* reset on patient switch */
+  useEffect(() => {
+    setSaved(null); setEditing(false); setDraft(null)
+    setAddingHpo(false); setShowConfirm(false)
+  }, [patient.id])
+
+  const display = saved ? { ...patient, ...saved } : patient
+
+  const startEdit = () => {
+    setDraft({
+      name:          display.name          || '',
+      gender:        display.gender        || '男',
+      dob:           display.dob           || '',
+      ethnicity:     display.ethnicity     || '',
+      consanguinity: display.consanguinity || '否',
+      coreSymptoms:  display.coreSymptoms  || display.summary || '',
+      familyHistory: display.familyHistory || '',
+      hpoTerms:      (display.hpoTerms || []).map(t => ({ ...t })),
+    })
+    setEditing(true)
+    setAddingHpo(false)
+  }
+
+  const cancelEdit = () => { setEditing(false); setDraft(null); setAddingHpo(false) }
+
+  /* clicking 保存更改 opens the confirm dialog */
+  const saveEdit = () => setShowConfirm(true)
+
+  /* actually commit after dialog choice */
+  const commitSave = (andThen) => {
+    setSaved({ ...display, ...draft })
+    setEditing(false); setDraft(null); setAddingHpo(false); setShowConfirm(false)
+    if (andThen) andThen()
+  }
+
+  const setField  = (k, v) => setDraft(d => ({ ...d, [k]: v }))
+  const removeHpo = (id)   => setDraft(d => ({ ...d, hpoTerms: d.hpoTerms.filter(t => t.id !== id) }))
+
+  const confirmAddHpo = () => {
+    const id = newHpoId.trim(); const label = newHpoLabel.trim()
+    if (!id || !label) return
+    setDraft(d => ({ ...d, hpoTerms: [...d.hpoTerms, { id, label }] }))
+    setNewHpoId(''); setNewHpoLabel(''); setAddingHpo(false)
+  }
+
+  const goDetail = (tab = 'hpo', sub = 'done') =>
+    setRoute({ view:'patient', id: patient.id, tab, sub })
+
+  return (
+    <div className="pv2-profile">
+
+      {/* ── Save confirm dialog ── */}
+      {showConfirm && (
+        <SaveConfirmDialog
+          onClose={() => setShowConfirm(false)}
+          onSaveOnly={() => commitSave()}
+          onVCF={() => commitSave(() => setRoute({ view:'new' }))}
+          onHPO={() => commitSave(() => setRoute({ view:'new' }))}
+        />
+      )}
+
+      {/* ── Sticky header ── */}
+      <div className="pv2-profile__head">
+        <div className="pv2-profile__head-left">
+          <div className="pv2-profile__avatar">{display.name.slice(-1)}</div>
+          <div className="pv2-profile__meta">
+            <div className="pv2-profile__name-row">
+              <span className="pv2-profile__name">{display.name}</span>
+              <span className="pv2-profile__demog">{display.gender} · {display.age}岁</span>
+            </div>
+            <div className="pv2-profile__sub-row">
+              <span className="pv2-profile__id mono">{display.id}</span>
+              <StatusDot kind={sm.kind}>{sm.label}</StatusDot>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Btn variant="primary" size="sm" onClick={() => setRoute({ view:'new' })}>
+            <IconPlus />新建诊断
+          </Btn>
+        </div>
+      </div>
+
+      {/* ── Content body ── */}
+      <div className="pv2-profile__body">
+
+        {/* ── Patient info card ── */}
+        <div className={`pv2-card${editing ? ' pv2-card--editing' : ''}`}>
+          <div className="pv2-card__head">
+            <span className="pv2-card__title">
+              患者档案
+              {editing && <span className="pv2-edit-badge">编辑中</span>}
+            </span>
+            {editing ? (
+              <div className="flex gap-2">
+                <Btn variant="secondary" size="sm" onClick={cancelEdit}>取消</Btn>
+                <Btn variant="primary"   size="sm" onClick={saveEdit}><IconCheck />保存更改</Btn>
+              </div>
+            ) : (
+              <Btn variant="ghost" size="sm" onClick={startEdit}>
+                <IconPencil />编辑
+              </Btn>
+            )}
+          </div>
+
+          <div className="pv2-card__body">
+            {editing ? (
+              /* ══ EDIT MODE ══ */
+              <>
+                <div className="pv2-info-grid">
+
+                  {/* Left: basic info fields */}
+                  <section className="pv2-info-col">
+                    <div className="pv2-section-label">基本信息</div>
+                    <div className="pv2-edit-fields">
+                      <label className="field">
+                        <span className="field__label">姓名</span>
+                        <input className="input" value={draft.name}
+                          onChange={e => setField('name', e.target.value)} />
+                      </label>
+                      <div className="pv2-edit-row2">
+                        <label className="field">
+                          <span className="field__label">性别</span>
+                          <select className="select" value={draft.gender}
+                            onChange={e => setField('gender', e.target.value)}>
+                            <option>男</option><option>女</option>
+                          </select>
+                        </label>
+                        <label className="field">
+                          <span className="field__label">出生日期</span>
+                          <input className="input" type="date" value={draft.dob}
+                            onChange={e => setField('dob', e.target.value)} />
+                        </label>
+                      </div>
+                      <div className="pv2-edit-row2">
+                        <label className="field">
+                          <span className="field__label">民族</span>
+                          <input className="input" value={draft.ethnicity}
+                            onChange={e => setField('ethnicity', e.target.value)} />
+                        </label>
+                        <label className="field">
+                          <span className="field__label">近亲婚配</span>
+                          <select className="select" value={draft.consanguinity}
+                            onChange={e => setField('consanguinity', e.target.value)}>
+                            <option>否</option><option>是</option><option>不详</option>
+                          </select>
+                        </label>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Right: history fields */}
+                  <section className="pv2-info-col pv2-info-col--divider">
+                    <div className="pv2-section-label">病史摘要</div>
+                    <div className="pv2-edit-fields">
+                      <label className="field">
+                        <span className="field__label">核心症状</span>
+                        <input className="input" placeholder="如：构音障碍 · 震颤 · 肝酶升高"
+                          value={draft.coreSymptoms}
+                          onChange={e => setField('coreSymptoms', e.target.value)} />
+                      </label>
+                      <label className="field">
+                        <span className="field__label">家族史</span>
+                        <textarea className="textarea" rows={4} placeholder="描述家族遗传病史、近亲婚配情况等..."
+                          value={draft.familyHistory}
+                          onChange={e => setField('familyHistory', e.target.value)} />
+                      </label>
+                    </div>
+                  </section>
+
+                </div>
+
+                {/* HPO tags edit area */}
+                <div className="pv2-hpo-section">
+                  <div className="pv2-section-label">HPO 表型标签</div>
+                  <div className="pv2-hpo-cloud">
+                    {draft.hpoTerms.map(t => (
+                      <span key={t.id} className={`hpo${t.neg ? ' hpo--neg' : ''}`}>
+                        <span className="hpo__id">{t.id}</span>
+                        <span className="hpo__label">{t.label}</span>
+                        <span className="hpo__x" onClick={() => removeHpo(t.id)}><IconX /></span>
+                      </span>
+                    ))}
+                    {!addingHpo && (
+                      <button className="pv2-hpo-add-btn" onClick={() => setAddingHpo(true)}>
+                        <IconPlus />添加表型
+                      </button>
+                    )}
+                  </div>
+                  {addingHpo && (
+                    <div className="pv2-hpo-add-form">
+                      <input className="input pv2-hpo-add-id" placeholder="HP:0000000"
+                        value={newHpoId} onChange={e => setNewHpoId(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && confirmAddHpo()} />
+                      <input className="input pv2-hpo-add-label" placeholder="表型描述"
+                        value={newHpoLabel} onChange={e => setNewHpoLabel(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && confirmAddHpo()} />
+                      <Btn variant="primary"   size="sm" onClick={confirmAddHpo}>确认</Btn>
+                      <Btn variant="secondary" size="sm" onClick={() => { setAddingHpo(false); setNewHpoId(''); setNewHpoLabel('') }}>取消</Btn>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              /* ══ VIEW MODE ══ */
+              <>
+                <div className="pv2-info-grid">
+                  <section className="pv2-info-col">
+                    <div className="pv2-section-label">基本信息</div>
+                    <dl className="pv2-kv">
+                      <dt>性别</dt>    <dd>{display.gender || '—'}</dd>
+                      <dt>年龄</dt>    <dd>{display.age}岁</dd>
+                      <dt>出生日期</dt><dd className="mono">{display.dob || '—'}</dd>
+                      <dt>民族</dt>    <dd>{display.ethnicity || '—'}</dd>
+                      <dt>近亲婚配</dt><dd>{display.consanguinity || '—'}</dd>
+                      <dt>注册时间</dt><dd className="mono">{display.registeredAt || display.createdAt || '—'}</dd>
+                      <dt>最后就诊</dt><dd className="mono">{display.lastVisitAt  || display.lastAt    || '—'}</dd>
+                    </dl>
+                  </section>
+                  <section className="pv2-info-col pv2-info-col--divider">
+                    <div className="pv2-section-label">病史摘要</div>
+                    {(display.coreSymptoms || display.summary) && (
+                      <div className="pv2-symptoms-chip">{display.coreSymptoms || display.summary}</div>
+                    )}
+                    {display.familyHistory && (
+                      <div className="pv2-family-history">
+                        <span className="pv2-family-history__label">家族史</span>
+                        {display.familyHistory}
+                      </div>
+                    )}
+                    {!display.coreSymptoms && !display.summary && !display.familyHistory && (
+                      <div className="t-3 t-sm">暂无详细病史记录</div>
+                    )}
+                  </section>
+                </div>
+
+                {(display.hpoTerms?.length > 0) && (
+                  <div className="pv2-hpo-section">
+                    <div className="pv2-section-label">HPO 表型标签</div>
+                    <div className="pv2-hpo-cloud">
+                      {display.hpoTerms.map(t => (
+                        <Hpo key={t.id} id={t.id} label={t.label} neg={t.neg} removable={false} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── Task history card ── */}
+        <div className="pv2-card" style={{ marginTop:16 }}>
+          <div className="pv2-card__head">
+            <span className="pv2-card__title">
+              诊断任务记录
+              {tasks.length > 0 && <span className="pv2-count-badge">{tasks.length}</span>}
+            </span>
+          </div>
+
+          {tasks.length === 0 ? (
+            <div className="pv2-task-empty">暂无诊断记录</div>
+          ) : (
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th style={{ width:170, paddingLeft:20 }}>任务时间</th>
+                  <th style={{ width:64 }}>类型</th>
+                  <th>诊断结果</th>
+                  <th style={{ width:96 }}>状态</th>
+                  <th style={{ width:88, textAlign:'right', paddingRight:20 }}>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map(task => {
+                  const tab = task.type === 'VCF' ? 'vcf' : 'hpo'
+                  const sub = task.status === 'running' ? 'running' : 'done'
+                  return (
+                    <tr key={task.id}>
+                      <td className="mono" style={{ color:'var(--text-2)', paddingLeft:20, fontSize:'var(--fz-12)' }}>
+                        {task.time}
+                      </td>
+                      <td>
+                        <span className={`pv2-type-tag pv2-type-tag--${task.type.toLowerCase()}`}>
+                          {task.type}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="pv2-result-cell" title={task.result}>{task.result}</div>
+                      </td>
+                      <td>
+                        {task.status === 'running'
+                          ? <span className="running-pill"><span className="spinner" />进行中</span>
+                          : task.status === 'done'
+                            ? <StatusDot kind="ok">已完成</StatusDot>
+                            : <StatusDot kind="err">已失败</StatusDot>
+                        }
+                      </td>
+                      <td style={{ textAlign:'right', paddingRight:20 }}>
+                        <Btn variant="ghost" size="sm" onClick={() => goDetail(tab, sub)}>
+                          查看详情
+                        </Btn>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════
+   Save Confirm Dialog
+   ══════════════════════════════════════════════ */
+function SaveConfirmDialog({ onClose, onSaveOnly, onVCF, onHPO }) {
+  const [choice, setChoice] = useState('hpo')
+
+  const handleConfirm = () => {
+    if (choice === 'save') onSaveOnly()
+    else if (choice === 'vcf') onVCF()
+    else onHPO()
+  }
+
+  const options = [
+    {
+      key: 'save',
+      type: 'save',
+      label: '仅保存',
+      hint: '保存档案，暂不发起分析',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 2h7l3 3v9H3V2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+          <path d="M5 2v4h5V2M5 9h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+    {
+      key: 'hpo',
+      type: 'hpo',
+      label: '发起 HPO 诊断',
+      hint: '基于表型标签进行 AI 辅助疾病推理',
+      recommended: true,
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/>
+          <path d="M8 2v2M8 12v2M14 8h-2M4 8H2M12.2 3.8l-1.4 1.4M5.2 10.8l-1.4 1.4M12.2 12.2l-1.4-1.4M5.2 5.2 3.8 3.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      key: 'vcf',
+      type: 'vcf',
+      label: '发起 VCF 分析',
+      hint: '上传基因组变异文件进行致病变异筛查',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 2c0 3 8 5 8 8s-8 2-8 5M12 2c0 3-8 5-8 8s8 2 8 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+          <path d="M5.5 5h5M5.5 8h5M5.5 11h5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity=".5"/>
+        </svg>
+      ),
+    },
+  ]
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="pv2-confirm-dialog" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="pv2-confirm-dialog__head">
+          <div className="pv2-confirm-dialog__icon">
+            <IconCheck />
+          </div>
+          <div className="pv2-confirm-dialog__copy">
+            <div className="pv2-confirm-dialog__title">档案已更新，是否同时发起诊断？</div>
+            <div className="pv2-confirm-dialog__desc">
+              患者基本信息与 HPO 表型标签已保存。您也可以立即基于更新后的档案发起一次新的诊断分析。
+            </div>
+          </div>
+        </div>
+
+        {/* Option cards */}
+        <div className="pv2-confirm-dialog__options">
+          {options.map(opt => (
+            <button
+              key={opt.key}
+              className={[
+                'pv2-diag-option',
+                `pv2-diag-option--${opt.type}`,
+                choice === opt.key ? 'is-selected' : '',
+              ].join(' ')}
+              onClick={() => setChoice(opt.key)}
+            >
+              <div className="pv2-diag-option__icon">{opt.icon}</div>
+              <div className="pv2-diag-option__body">
+                <div className="pv2-diag-option__label">{opt.label}</div>
+                <div className="pv2-diag-option__hint">{opt.hint}</div>
+              </div>
+              {opt.recommended && <div className="pv2-diag-option__recommended">推荐</div>}
+              {choice === opt.key && (
+                <div className="pv2-diag-option__check"><IconCheck /></div>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="pv2-confirm-dialog__foot">
+          <Btn variant="ghost" size="sm" onClick={onClose}>返回编辑</Btn>
+          <Btn variant="primary" onClick={handleConfirm}>确定</Btn>
+        </div>
+
+      </div>
+    </div>
+  )
+}
