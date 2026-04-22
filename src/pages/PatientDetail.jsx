@@ -106,7 +106,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
             <div className="patient-id__name">{p.name}</div>
             <div className="patient-id__meta">{p.id} · {p.gender}</div>
           </div>
-          <div style={{position:'relative',flexShrink:0}}>
+          {/* <div style={{position:'relative',flexShrink:0}}>
             <button
               onClick={onHistOpen}
               onMouseEnter={() => setHistTip(true)}
@@ -127,7 +127,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
                 whiteSpace:'nowrap',zIndex:999,pointerEvents:'none',
               }}>查看患者历史</div>
             )}
-          </div>
+          </div> */}
         </div>
         <dl className="kv">
           <dt>出生日期</dt><dd>{p.dob || '—'}</dd>
@@ -173,7 +173,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
         </div>
       </div>
 
-      <div className="pd-left__foot">
+      {/* <div className="pd-left__foot">
         <Btn variant="secondary" size="sm" style={{flex:1}} onClick={onEditOpen}><IconFile/>编辑档案</Btn>
         <Btn variant="ghost" size="sm" onClick={() => setMoreOpen(!moreOpen)}>
           更多操作 <IconChevron/>
@@ -185,7 +185,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
             </div>
           </div>
         )}
-      </div>
+      </div> */}
     </aside>
   )
 }
@@ -961,7 +961,7 @@ function VTabAcmg({ r }) {
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,marginBottom:10,flexWrap:'wrap'}}>
         {/* <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)'}}>ACMG 证据条目</div> */}
         <div style={{fontSize:'var(--fz-12)',color:'var(--text-3)',display:'flex',gap:10,alignItems:'center'}}>
-          <span style={{display:'inline-flex',alignItems:'center',gap:6}}>综合评级  <Acmg k={r.acmg}/></span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:6}}>综合评级<Acmg k={r.acmg}/></span>
           <span>累计评分 <b className="mono" style={{color:'var(--text-1)',fontSize:'var(--fz-14)'}}>
             {score > 0 ? '+' : ''}{score}
           </b> 分 <span style={{color:'var(--text-4)'}}>(致病阈值 ≥6)</span></span>
@@ -1004,6 +1004,7 @@ function VTabAcmg({ r }) {
         {r.predictions && (
           <div>
             <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>预测工具详情</div>
+            <div style={{border:'1px solid var(--border-subtle)',borderRadius:'var(--r-3)',overflow:'hidden'}}>
             <table className="tbl cmp-table">
               <thead><tr><th>工具</th><th>分数</th><th>结论</th></tr></thead>
               <tbody>
@@ -1016,11 +1017,13 @@ function VTabAcmg({ r }) {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         {r.popFreq && (
           <div>
             <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-3)',marginBottom:8}}>群体频率</div>
+            <div style={{border:'1px solid var(--border-subtle)',borderRadius:'var(--r-3)',overflow:'hidden'}}>
             <table className="tbl cmp-table">
               <thead><tr>
                 <th>数据库</th><th className="num">AF</th>
@@ -1048,6 +1051,7 @@ function VTabAcmg({ r }) {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

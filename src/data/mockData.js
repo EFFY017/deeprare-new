@@ -335,6 +335,13 @@ export const VCF_RESULT = {
         { tool: "REVEL",      score: "0.89",  label: "High pathogenicity" },
         { tool: "SpliceAI",   score: "0.02",  label: "No splicing impact" },
       ],
+      databases: [
+        { name: "rsID",    value: "rs540",                      url: "https://www.ncbi.nlm.nih.gov/snp/rs540" },
+        { name: "ClinVar", value: "NM_000053.4:c.4396T>C",      url: "https://www.ncbi.nlm.nih.gov/clinvar/" },
+        { name: "ClinGen", value: "ATP7B",                      url: "https://clinicalgenome.org/gene/ATP7B/" },
+        { name: "gnomAD",  value: "ATP7B",                      url: "https://gnomad.broadinstitute.org/gene/ATP7B" },
+        { name: "GeneBe",  value: "NM_000053.4:c.4396T>C",      url: "https://genebe.net/" },
+      ],
       literature: [
         { n: 1, text: "Thomas GR et al. The Wilson disease gene: spectrum of mutations. Nat Genet. 1995;9(2):210-217. (p.Arg778Leu 为东亚最常见突变, 频率 ~30%)" },
         { n: 2, text: "Gu YH et al. ATP7B gene mutations in 29 families with Wilson's disease. J Hum Genet. 2003;48(7):345-353." },

@@ -2017,7 +2017,7 @@ body { background: var(--bg-sunken); }
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 22px;
+  padding: 10px 22px 10px 46px;
   background: var(--bg-sunken);
 }
 .vdetail__score {
@@ -2029,7 +2029,7 @@ body { background: var(--bg-sunken); }
   flex-shrink: 0;
 }
 .vdetail__body {
-  padding: 1px 22px 16px;
+  padding: 1px 22px 16px 46px;
 }
 
 /* running stage card */
