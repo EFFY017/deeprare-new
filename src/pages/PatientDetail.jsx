@@ -1068,9 +1068,17 @@ function VTabSynthesis({ r }) {
   const text = r.synthesis || r.geneInfo
   if (!text) return <VTabEmpty text="暂无综合分析内容"/>
   return (
-    <div style={{maxWidth:820}}>
+    <div style={{
+      maxWidth: 1000,
+      maxHeight: 360,
+      overflowY: 'auto',
+      padding: '12px 14px',
+      border: '1px solid var(--border-subtle)',
+      borderRadius: 'var(--r-3)',
+      background: 'var(--bg-surface)',
+    }}>
       {text.split('\n\n').map((para, i) => (
-        <p key={i} style={{margin:'0 0 14px',fontSize:'var(--fz-13)',color:'var(--text-2)',lineHeight:1.8}}>{para}</p>
+        <p key={i} style={{margin:'0 0 14px',fontSize:'var(--fz-13)',color:'var(--text-2)',lineHeight:1.8,whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{para}</p>
       ))}
     </div>
   )
