@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Btn, Badge, StatusDot } from '../components/primitives'
-import { IconSearch, IconFilter, IconPlus, IconChevron } from '../components/icons'
+import { IconSearch, IconFilter, IconPlus, IconChevron, IconEye, IconEyeOff } from '../components/icons'
 import { PATIENTS, HERO_PATIENT } from '../data/mockData'
 
 export default function PageList({ setRoute }) {
@@ -8,6 +8,7 @@ export default function PageList({ setRoute }) {
   const [sortKey, setSortKey] = useState('lastAt')
   const [sortDir, setSortDir] = useState('desc')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [hideNames, setHideNames] = useState(false)
 
   const rows = useMemo(() => {
     let arr = PATIENTS.slice()
@@ -61,8 +62,24 @@ export default function PageList({ setRoute }) {
             <button key={k} className={'chip' + (statusFilter === k ? ' is-active' : '')} onClick={() => setStatusFilter(k)}>{l}</button>
           ))}
         </div>
-        <div style={{marginLeft:'auto',fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
-          显示 <b>{rows.length}</b> / {PATIENTS.length}
+        <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:10}}>
+          <button
+            onClick={() => setHideNames(h => !h)}
+            title={hideNames ? '显示姓名' : '隐藏姓名'}
+            style={{
+              display:'inline-flex',alignItems:'center',gap:5,
+              padding:'0 8px',height:26,borderRadius:'var(--r-2)',border:'1px solid var(--border)',
+              background: hideNames ? 'var(--n-100)' : 'transparent',
+              color: hideNames ? 'var(--text-1)' : 'var(--text-3)',
+              fontSize:'var(--fz-12)',cursor:'pointer',
+            }}
+          >
+            {hideNames ? <IconEyeOff/> : <IconEye/>}
+            {hideNames ? '姓名已隐藏' : '隐藏姓名'}
+          </button>
+          <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
+            显示 <b>{rows.length}</b> / {PATIENTS.length}
+          </span>
         </div>
       </div>
 
@@ -89,9 +106,9 @@ export default function PageList({ setRoute }) {
                     <td className="mono" style={{color:'var(--text-3)'}}>{p.id}</td>
                     <td>
                       <div className="name-cell">
-                        <div className="name-avatar">{p.name.slice(-1)}</div>
+                        <div className="name-avatar">{hideNames ? '●' : p.name.slice(-1)}</div>
                         <div>
-                          <div className="name-main">{p.name}</div>
+                          <div className="name-main">{hideNames ? '●●●' : p.name}</div>
                           <div className="name-sub">{p.gender} · {p.age}岁</div>
                         </div>
                       </div>

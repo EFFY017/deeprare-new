@@ -8,10 +8,15 @@ import { PATIENTS, HERO_PATIENT } from './data/mockData'
 
 export default function App() {
   const [route, setRoute] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('view')) return Object.fromEntries(params.entries())
     try { const v = JSON.parse(localStorage.getItem('dr-route') || 'null'); return v || { view: 'new' } }
     catch { return { view: 'new' } }
   })
-  useEffect(() => { try { localStorage.setItem('dr-route', JSON.stringify(route)) } catch {} }, [route])
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('view')) return
+    try { localStorage.setItem('dr-route', JSON.stringify(route)) } catch {}
+  }, [route])
   const [deleteFor, setDeleteFor] = useState(null)
   const navigate = (r) => setRoute(r)
 

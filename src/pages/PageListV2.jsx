@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Btn, StatusDot, Hpo } from '../components/primitives'
-import { IconSearch, IconPlus, IconChevron, IconX, IconCheck } from '../components/icons'
+import { IconSearch, IconPlus, IconChevron, IconX, IconCheck, IconEye, IconEyeOff } from '../components/icons'
 import { PATIENTS, HERO_PATIENT } from '../data/mockData'
 
 const IconPencil = () => (
@@ -75,6 +75,7 @@ const STATUS_META = {
 export default function PageListV2({ setRoute }) {
   const [q, setQ]               = useState('')
   const [selectedId, setSelectedId] = useState(null)
+  const [hideNames, setHideNames]   = useState(false)
 
   const filtered = useMemo(() => {
     if (!q) return PATIENTS
@@ -104,7 +105,22 @@ export default function PageListV2({ setRoute }) {
         <div className="pv2-side__head">
           <div className="pv2-side__title-row">
             <span className="pv2-side__title">患者列表</span>
-            <span className="pv2-side__count">{filtered.length}</span>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span className="pv2-side__count">{filtered.length}</span>
+              <button
+                onClick={() => setHideNames(h => !h)}
+                title={hideNames ? '显示姓名' : '隐藏姓名'}
+                style={{
+                  display:'inline-flex',alignItems:'center',justifyContent:'center',
+                  width:22,height:22,borderRadius:'var(--r-2)',border:'1px solid var(--border)',
+                  background: hideNames ? 'var(--n-100)' : 'transparent',
+                  color: hideNames ? 'var(--text-1)' : 'var(--text-3)',
+                  cursor:'pointer',flexShrink:0,
+                }}
+              >
+                {hideNames ? <IconEyeOff/> : <IconEye/>}
+              </button>
+            </div>
           </div>
           <div className="input-wrap">
             <span className="input-wrap__icon"><IconSearch /></span>
@@ -127,10 +143,10 @@ export default function PageListV2({ setRoute }) {
                 className={'pv2-patient-row' + (isActive ? ' is-active' : '')}
                 onClick={() => setSelectedId(p.id)}
               >
-                <div className="pv2-patient-row__avatar">{p.name.slice(-1)}</div>
+                <div className="pv2-patient-row__avatar">{hideNames ? '●' : p.name.slice(-1)}</div>
                 <div className="pv2-patient-row__info">
                   <div className="pv2-patient-row__name-line">
-                    <span className="pv2-patient-row__name">{p.name}</span>
+                    <span className="pv2-patient-row__name">{hideNames ? '●●●' : p.name}</span>
                     <span className="pv2-patient-row__demog">{p.gender} · {p.age}岁</span>
                   </div>
                   <div className="pv2-patient-row__id mono">{p.id}</div>
@@ -250,8 +266,10 @@ function PatientPanel({ patient, setRoute }) {
     setNewHpoId(''); setNewHpoLabel(''); setAddingHpo(false)
   }
 
-  const goDetail = (tab = 'hpo', sub = 'done') =>
-    setRoute({ view:'patient', id: patient.id, tab, sub })
+  const goDetail = (tab = 'hpo', sub = 'done') => {
+    const params = new URLSearchParams({ view: 'patient', id: patient.id, tab, sub })
+    window.open(`${window.location.pathname}?${params}`, '_blank')
+  }
 
   return (
     <div className="pv2-profile">

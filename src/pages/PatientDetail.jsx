@@ -760,14 +760,14 @@ function VcfDone() {
             ))}
           </div>
         </div>
-        <div style={{
+        {/* <div style={{
           display:'flex',alignItems:'center',gap:0,
           borderTop:'1px solid var(--border)',
           background:'var(--bg-sunken)',
           borderRadius:'0 0 var(--r-4) var(--r-4)',
           overflow:'hidden',
         }}>
-        </div>
+        </div> */}
       </div>
 
       <div className="panel">

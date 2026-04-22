@@ -1795,7 +1795,7 @@ body { background: var(--bg-sunken); }
   padding: 0 32px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 16px;
+  display: flex; align-items: stretch; gap: 16px;
   position: sticky; top: 0; z-index: 5;
 }
 .pd-tabs-bar .tabs { flex: 1; border-bottom: none; }
@@ -2507,7 +2507,6 @@ body { background: var(--bg-sunken); }
   border: 1px solid var(--border);
   border-radius: var(--r-4);
   overflow: hidden;
-  box-shadow: var(--sh-1);
 }
 
 .pv2-card__head {
