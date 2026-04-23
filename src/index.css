@@ -2626,7 +2626,7 @@ body { background: var(--bg-sunken); }
 .pv2-detail-left {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 14px;
   gap: 12px;
   background: var(--bg-sunken);

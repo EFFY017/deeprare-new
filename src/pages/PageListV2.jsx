@@ -311,7 +311,7 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
         <div className="pv2-detail-left">
 
           {/* ── Archive panel ── */}
-          <div className={`panel${editing ? ' panel--editing' : ''}`}>
+          <div className={`panel${editing ? ' panel--editing' : ''}`} style={{flex:1,minHeight:0,display:'flex',flexDirection:'column'}}>
             <div className="panel__head">
               {/* Patient identity */}
               <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
@@ -341,7 +341,7 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
             </div>
 
             {/* Archive body: 180px KV | 1fr HPO (view) · 1fr form | 1fr HPO (edit) */}
-            <div className="panel__body" style={{padding:0}}>
+            <div className="panel__body" style={{padding:0,flex:1,overflowY:'auto',minHeight:0}}>
               {editing ? (
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr'}}>
                   {/* Basic info form */}
@@ -429,7 +429,7 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
                     </dl>
                   </div>
                   {/* HPO column */}
-                  <div style={{padding:'14px 16px',overflowY:'auto',maxHeight:190}}>
+                  <div style={{padding:'14px 16px',overflowY:'auto'}}>
                     <div className="pv2-section-label" style={{marginBottom:10}}>HPO 表型标签</div>
                     {display.hpoTerms?.length > 0 ? (
                       <div className="pv2-hpo-cloud">
@@ -447,11 +447,11 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
           </div>
 
           {/* ── History panel ── */}
-          <div className={`panel${editing ? ' panel--editing' : ''}`} style={{minHeight:180}}>
+          <div className={`panel${editing ? ' panel--editing' : ''}`} style={{flex:2,minHeight:0,display:'flex',flexDirection:'column'}}>
             <div className="panel__head">
               <span className="panel__title">病史摘要</span>
             </div>
-            <div className="panel__body">
+            <div className="panel__body" style={{flex:1,overflowY:'auto',minHeight:0}}>
               {editing ? (
                 <div className="pv2-edit-fields">
                   <label className="field">
