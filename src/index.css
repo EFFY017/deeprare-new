@@ -1888,6 +1888,28 @@ body { background: var(--bg-sunken); }
 .panel__body { padding: 16px; }
 .panel__body--flush { padding: 0; }
 
+/* panel variants */
+.panel--grow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.panel--grow > .panel__body,
+.panel--grow > .panel__body--flush {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.panel--editing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(58,96,184,.08);
+}
+.panel--editing > .panel__head {
+  background: var(--accent-soft);
+  border-bottom-color: var(--brand-100);
+}
+
 /* hit badge */
 .hit {
   display: inline-flex; align-items: center; gap: 4px;
@@ -2388,7 +2410,7 @@ body { background: var(--bg-sunken); }
 /* ── Right main area ── */
 .pv2-main {
   min-width: 0;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--bg-sunken);
   display: flex;
   flex-direction: column;
@@ -2419,6 +2441,7 @@ body { background: var(--bg-sunken); }
 /* ── Profile component ── */
 .pv2-profile {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -2494,10 +2517,310 @@ body { background: var(--bg-sunken); }
   color: var(--text-4);
 }
 
-/* ── Profile content body ── */
+/* ── Profile content body (kept for compat, unused in new layout) ── */
 .pv2-profile__body {
-  padding: 20px 24px 48px;
+  padding: 16px 20px 48px;
   flex: 1;
+}
+
+/* ════════════════════════════════════════════
+   Detail view — 2-column split layout
+   ════════════════════════════════════════════ */
+
+/* Body fills all remaining height after head */
+.pv2-detail-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  overflow: hidden;
+}
+
+/* Left 2/3: panels stack with natural scroll */
+.pv2-detail-left {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 14px;
+  gap: 12px;
+  background: var(--bg-sunken);
+  border-right: 1px solid var(--border);
+}
+
+/* Right 1/3: task panel fills full height */
+.pv2-detail-right {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 14px;
+  background: var(--bg-sunken);
+}
+
+/* ── Archive card (top of left column) ── */
+.pv2-arc {
+  background: var(--bg-surface);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  transition: box-shadow .15s;
+}
+
+.pv2-arc--editing {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.pv2-arc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pv2-arc__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pv2-arc__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--brand-500);
+  color: #fff;
+  font-size: var(--fz-18);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: var(--sh-2);
+}
+
+.pv2-arc__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pv2-arc__name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.pv2-arc__name {
+  font-size: var(--fz-15);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+}
+
+.pv2-arc__demog-tag {
+  font-size: var(--fz-12);
+  color: var(--text-3);
+}
+
+.pv2-arc__sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv2-arc__id {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+  font-family: var(--font-mono);
+}
+
+/* Archive card body: demo KV | HPO cloud */
+.pv2-arc__body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+}
+
+.pv2-arc__demo {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+
+.pv2-arc__hpo-col {
+  padding: 14px 16px;
+  overflow-y: auto;
+  max-height: 180px;
+}
+
+/* Archive body in edit mode */
+.pv2-arc__body--edit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.pv2-arc__edit-col {
+  padding: 14px 16px;
+}
+
+.pv2-arc__edit-col + .pv2-arc__edit-col {
+  border-left: 1px solid var(--border);
+}
+
+/* ── History card (flex-1, fills rest of left column) ── */
+.pv2-hist {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  transition: box-shadow .15s;
+}
+
+.pv2-hist--editing {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.pv2-hist__head {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  background: var(--bg-sunken);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.pv2-hist__title {
+  font-size: var(--fz-11);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+.pv2-hist__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* History long text */
+.pv2-hist-text {
+  font-size: var(--fz-13);
+  color: var(--text-2);
+  line-height: 1.75;
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+/* ── Task column (right 1/3) ── */
+.pv2-task-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pv2-task-col__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-sunken);
+  flex-shrink: 0;
+}
+
+.pv2-task-col__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv2-task-col__title {
+  font-size: var(--fz-13);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.pv2-task-col__list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.pv2-task-col__empty {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: var(--fz-13);
+  color: var(--text-4);
+  line-height: 1.6;
+}
+
+/* ── Task item (card-style row) ── */
+.pv2-task-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background 0.1s;
+  position: relative;
+}
+
+.pv2-task-item:last-child { border-bottom: none; }
+.pv2-task-item:hover { background: var(--bg-hover); }
+
+.pv2-task-item--done    { border-left: 3px solid var(--ok-500); }
+.pv2-task-item--running { border-left: 3px solid var(--accent); }
+.pv2-task-item--failed  { border-left: 3px solid var(--err-500); }
+
+.pv2-task-item:hover .pv2-task-item__arrow {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.pv2-task-item__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.pv2-task-item__time {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+  font-family: var(--font-mono);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv2-task-item__result {
+  font-size: var(--fz-12);
+  color: var(--text-2);
+  line-height: 1.55;
+  padding-right: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pv2-task-item__arrow {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  color: var(--text-4);
+  opacity: 0;
+  transition: opacity .12s, transform .12s;
+  display: grid;
+  place-items: center;
 }
 
 /* ── Card component ── */

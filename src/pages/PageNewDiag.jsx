@@ -3,13 +3,25 @@ import { Btn, Badge, Hpo, Field } from '../components/primitives'
 import { IconSearch, IconPlus, IconUser, IconDna, IconInfo, IconUpload } from '../components/icons'
 import { PATIENTS, HERO_PATIENT } from '../data/mockData'
 
-export default function PageNewDiag({ setRoute }) {
+export default function PageNewDiag({ route, setRoute }) {
   const [tab, setTab] = useState('hpo')
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState(() => {
+    const id = route?.patientId
+    if (!id) return null
+    if (id === HERO_PATIENT.id) return HERO_PATIENT
+    return PATIENTS.find(x => x.id === id) || null
+  })
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [text, setText] = useState('')
-  const [form, setForm] = useState({ name: '', gender: '', age: '', dob: '', ethnicity: '', family: '', consang: '否' })
+  const [form, setForm] = useState(() => {
+    const id = route?.patientId
+    if (!id) return { name: '', gender: '', age: '', dob: '', ethnicity: '', family: '', consang: '否' }
+    const p = id === HERO_PATIENT.id ? HERO_PATIENT : PATIENTS.find(x => x.id === id)
+    if (!p) return { name: '', gender: '', age: '', dob: '', ethnicity: '', family: '', consang: '否' }
+    if (p.id === HERO_PATIENT.id) return { name: HERO_PATIENT.name, gender: HERO_PATIENT.gender, age: String(HERO_PATIENT.age), dob: HERO_PATIENT.dob, ethnicity: HERO_PATIENT.ethnicity, family: HERO_PATIENT.familyHistory, consang: HERO_PATIENT.consanguinity }
+    return { name: p.name, gender: p.gender, age: String(p.age), dob: '—', ethnicity: '—', family: '—', consang: '否' }
+  })
 
   const matches = useMemo(() => {
     if (!query) return PATIENTS.slice(0, 5)
@@ -101,7 +113,7 @@ export default function PageNewDiag({ setRoute }) {
                   </div>
                   <div className="selected-patient__right">
                     <Badge tone="brand" dot>已选择 · 档案预填</Badge>
-                    <Btn variant="ghost" size="sm" onClick={clearSelected}>切换</Btn>
+                    <Btn variant="ghost" size="sm" onClick={clearSelected}>清除</Btn>
                   </div>
                 </div>
               )}
@@ -175,12 +187,9 @@ export default function PageNewDiag({ setRoute }) {
               <div style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
                 <IconInfo/> 提交后 AI 推理将在 2–5 分钟内完成，可前往患者详情页查看进度。
               </div>
-              <div className="flex gap-2">
-                <Btn variant="ghost">取消</Btn>
-                <Btn variant="primary" onClick={submit}>
-                  发起 {tab === 'hpo' ? 'HPO 表型诊断' : 'VCF 基因诊断'}
-                </Btn>
-              </div>
+              <Btn variant="primary" onClick={submit}>
+                发起 {tab === 'hpo' ? 'HPO 表型诊断' : 'VCF 基因诊断'}
+              </Btn>
             </div>
           </div>
         </div>

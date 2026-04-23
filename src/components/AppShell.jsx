@@ -3,9 +3,8 @@ import { IconSettings } from './icons'
 
 export default function AppShell({ route, setRoute, children }) {
   const nav = [
-    { key: 'new',    label: '新建诊断' },
-    { key: 'list',   label: '患者列表' },
-    { key: 'listv2', label: '患者列表 v2' },
+    { key: 'new',  label: '新建诊断' },
+    { key: 'list', label: '患者列表' },
   ]
   const isPatient = route.view === 'patient'
   return (

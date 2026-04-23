@@ -48,7 +48,7 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
 
         <div className="pd-content">
           {tab === 'hpo' && sub === 'done'    && <HpoDone/>}
-          {tab === 'hpo' && sub === 'running' && <HpoRunning/>}
+          {tab === 'hpo' && sub === 'running' && <HpoRunning patientId={patient.id} setRoute={setRoute}/>}
           {tab === 'vcf'                       && <VcfDone/>}
         </div>
       </div>
@@ -69,7 +69,7 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
           <div className="dialog dialog--wide" onClick={e => e.stopPropagation()}>
             <div className="dialog__head" style={{alignItems:'center'}}>
               <div>
-                <div className="dialog__title">患者档案历史</div>
+                <div className="dialog__title">历史诊断</div>
                 <div className="dialog__desc">{patient.name} · {patient.id}</div>
               </div>
               <Btn variant="ghost" size="sm" onClick={() => setHistOpen(false)} style={{marginLeft:'auto'}}><IconX/></Btn>
@@ -106,7 +106,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
             <div className="patient-id__name">{p.name}</div>
             <div className="patient-id__meta">{p.id} · {p.gender}</div>
           </div>
-          {/* <div style={{position:'relative',flexShrink:0}}>
+          <div style={{position:'relative',flexShrink:0}}>
             <button
               onClick={onHistOpen}
               onMouseEnter={() => setHistTip(true)}
@@ -125,9 +125,9 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
                 fontSize:'var(--fz-11)',fontWeight:500,
                 padding:'4px 8px',borderRadius:'var(--r-2)',
                 whiteSpace:'nowrap',zIndex:999,pointerEvents:'none',
-              }}>查看患者历史</div>
+              }}>查看其他诊断</div>
             )}
-          </div> */}
+          </div>
         </div>
         <dl className="kv">
           <dt>出生日期</dt><dd>{p.dob || '—'}</dd>
@@ -142,10 +142,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
         <div style={{fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.55}}>{p.familyHistory || '无特殊家族史'}</div>
       </div>
 
-      {/* <div className="pd-left__section">
-        <div className="pd-left__title">核心症状</div>
-        <div style={{fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.55}}>{p.coreSymptoms || p.summary}</div>
-      </div> */}
+     
 
       {p.hpoTerms && p.hpoTerms.length > 0 && (
         <div className="pd-left__section">
@@ -621,13 +618,14 @@ function ConvoMessages({ messages }) {
 /* ============================================================
    HpoRunning
    ============================================================ */
-function HpoRunning() {
+function HpoRunning({ patientId, setRoute }) {
   const r = HPO_RUNNING
   const [stage] = useState(3)
   const [hpoList, setHpoList] = useState(r.stage2.extracted)
   const [q, setQ] = useState('')
 
   const removeHpo = (id) => setHpoList(hpoList.filter(h => h.id !== id))
+  const handleTerminate = () => setRoute({ view: 'new', patientId })
 
   return (
     <>
@@ -696,7 +694,7 @@ function HpoRunning() {
           </div>
           <div className="flex gap-2" style={{alignItems:'center'}}>
             <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>开始于 {r.stage3.startedAt}</span>
-            <Btn variant="ghost" size="sm"><IconX/>终止</Btn>
+            <Btn variant="ghost" size="sm" onClick={handleTerminate}><IconX/>终止</Btn>
           </div>
         </div>
         <div className="stage-card__body">

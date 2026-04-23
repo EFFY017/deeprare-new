@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Btn, StatusDot, Hpo } from '../components/primitives'
-import { IconSearch, IconPlus, IconChevron, IconX, IconCheck, IconEye, IconEyeOff } from '../components/icons'
+import { IconSearch, IconPlus, IconChevron, IconX, IconCheck, IconEye, IconEyeOff, IconWarning } from '../components/icons'
 import { PATIENTS, HERO_PATIENT } from '../data/mockData'
 
 const IconPencil = () => (
@@ -75,7 +75,20 @@ const STATUS_META = {
 export default function PageListV2({ setRoute }) {
   const [q, setQ]               = useState('')
   const [selectedId, setSelectedId] = useState(null)
-  const [hideNames, setHideNames]   = useState(false)
+  const [hideNames, setHideNames]   = useState(() => {
+    try { return localStorage.getItem('dr-hide-names') === 'true' } catch { return false }
+  })
+  const [isEditing,  setIsEditing]  = useState(false)
+  const [pendingId,  setPendingId]  = useState(null)
+
+  useEffect(() => {
+    try { localStorage.setItem('dr-hide-names', hideNames) } catch {}
+  }, [hideNames])
+
+  const handleSelectPatient = (id) => {
+    if (isEditing && id !== selectedId) { setPendingId(id); return }
+    setSelectedId(id)
+  }
 
   const filtered = useMemo(() => {
     if (!q) return PATIENTS
@@ -99,6 +112,13 @@ export default function PageListV2({ setRoute }) {
 
   return (
     <div className="pv2-shell">
+
+      {pendingId && (
+        <UnsavedChangesDialog
+          onConfirm={() => { setSelectedId(pendingId); setPendingId(null) }}
+          onCancel={() => setPendingId(null)}
+        />
+      )}
 
       {/* ── LEFT SIDEBAR ── */}
       <aside className="pv2-side">
@@ -141,7 +161,7 @@ export default function PageListV2({ setRoute }) {
               <div
                 key={p.id}
                 className={'pv2-patient-row' + (isActive ? ' is-active' : '')}
-                onClick={() => setSelectedId(p.id)}
+                onClick={() => handleSelectPatient(p.id)}
               >
                 <div className="pv2-patient-row__avatar">{hideNames ? '●' : p.name.slice(-1)}</div>
                 <div className="pv2-patient-row__info">
@@ -179,7 +199,7 @@ export default function PageListV2({ setRoute }) {
       <main className="pv2-main">
         {!patient
           ? <EmptyState setRoute={setRoute} />
-          : <PatientPanel patient={patient} setRoute={setRoute} />
+          : <PatientPanel patient={patient} setRoute={setRoute} onEditingChange={setIsEditing} />
         }
       </main>
 
@@ -208,7 +228,7 @@ function EmptyState({ setRoute }) {
 }
 
 /* ── Patient panel ── */
-function PatientPanel({ patient, setRoute }) {
+function PatientPanel({ patient, setRoute, onEditingChange }) {
   const tasks = TASK_MAP[patient.id] || []
   const sm    = STATUS_META[patient.status] || { kind:'queue', label:'—' }
 
@@ -225,6 +245,7 @@ function PatientPanel({ patient, setRoute }) {
   useEffect(() => {
     setSaved(null); setEditing(false); setDraft(null)
     setAddingHpo(false); setShowConfirm(false)
+    onEditingChange?.(false)
   }, [patient.id])
 
   const display = saved ? { ...patient, ...saved } : patient
@@ -242,9 +263,10 @@ function PatientPanel({ patient, setRoute }) {
     })
     setEditing(true)
     setAddingHpo(false)
+    onEditingChange?.(true)
   }
 
-  const cancelEdit = () => { setEditing(false); setDraft(null); setAddingHpo(false) }
+  const cancelEdit = () => { setEditing(false); setDraft(null); setAddingHpo(false); onEditingChange?.(false) }
 
   /* clicking 保存更改 opens the confirm dialog */
   const saveEdit = () => setShowConfirm(true)
@@ -253,6 +275,7 @@ function PatientPanel({ patient, setRoute }) {
   const commitSave = (andThen) => {
     setSaved({ ...display, ...draft })
     setEditing(false); setDraft(null); setAddingHpo(false); setShowConfirm(false)
+    onEditingChange?.(false)
     if (andThen) andThen()
   }
 
@@ -267,76 +290,63 @@ function PatientPanel({ patient, setRoute }) {
   }
 
   const goDetail = (tab = 'hpo', sub = 'done') => {
-    const params = new URLSearchParams({ view: 'patient', id: patient.id, tab, sub })
-    window.open(`${window.location.pathname}?${params}`, '_blank')
+    setRoute({ view: 'patient', id: patient.id, tab, sub })
   }
 
   return (
     <div className="pv2-profile">
 
-      {/* ── Save confirm dialog ── */}
       {showConfirm && (
         <SaveConfirmDialog
           onClose={() => setShowConfirm(false)}
           onSaveOnly={() => commitSave()}
-          onVCF={() => commitSave(() => setRoute({ view:'new' }))}
-          onHPO={() => commitSave(() => setRoute({ view:'new' }))}
+          onVCF={() => commitSave(() => setRoute({ view:'new', patientId: patient.id }))}
+          onHPO={() => commitSave(() => setRoute({ view:'new', patientId: patient.id }))}
         />
       )}
 
-      {/* ── Sticky header ── */}
-      <div className="pv2-profile__head">
-        <div className="pv2-profile__head-left">
-          <div className="pv2-profile__avatar">{display.name.slice(-1)}</div>
-          <div className="pv2-profile__meta">
-            <div className="pv2-profile__name-row">
-              <span className="pv2-profile__name">{display.name}</span>
-              <span className="pv2-profile__demog">{display.gender} · {display.age}岁</span>
-            </div>
-            <div className="pv2-profile__sub-row">
-              <span className="pv2-profile__id mono">{display.id}</span>
-              <StatusDot kind={sm.kind}>{sm.label}</StatusDot>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Btn variant="primary" size="sm" onClick={() => setRoute({ view:'new' })}>
-            <IconPlus />新建诊断
-          </Btn>
-        </div>
-      </div>
+      <div className="pv2-detail-body">
 
-      {/* ── Content body ── */}
-      <div className="pv2-profile__body">
+        {/* ══ Left 2/3 — archive + history panels ══ */}
+        <div className="pv2-detail-left">
 
-        {/* ── Patient info card ── */}
-        <div className={`pv2-card${editing ? ' pv2-card--editing' : ''}`}>
-          <div className="pv2-card__head">
-            <span className="pv2-card__title">
-              患者档案
-              {editing && <span className="pv2-edit-badge">编辑中</span>}
-            </span>
-            {editing ? (
-              <div className="flex gap-2">
-                <Btn variant="secondary" size="sm" onClick={cancelEdit}>取消</Btn>
-                <Btn variant="primary"   size="sm" onClick={saveEdit}><IconCheck />保存更改</Btn>
+          {/* ── Archive panel ── */}
+          <div className={`panel${editing ? ' panel--editing' : ''}`}>
+            <div className="panel__head">
+              {/* Patient identity */}
+              <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
+                <div className="pv2-arc__avatar">{display.name.slice(-1)}</div>
+                <div style={{display:'flex',flexDirection:'column',gap:3,minWidth:0}}>
+                  <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}>
+                    <span style={{fontSize:'var(--fz-15)',fontWeight:700,letterSpacing:'-0.01em',color:'var(--text-1)'}}>{display.name}</span>
+                    <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>{display.gender} · {display.age}岁</span>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <span style={{fontSize:'var(--fz-11)',color:'var(--text-4)',fontFamily:'var(--font-mono)'}}>{display.id}</span>
+                    <StatusDot kind={sm.kind}>{sm.label}</StatusDot>
+                    {editing && <span className="pv2-edit-badge">编辑中</span>}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <Btn variant="ghost" size="sm" onClick={startEdit}>
-                <IconPencil />编辑
-              </Btn>
-            )}
-          </div>
+              <div className="flex gap-2" style={{flexShrink:0}}>
+                {editing ? (
+                  <>
+                    <Btn variant="secondary" size="sm" onClick={cancelEdit}>取消</Btn>
+                    <Btn variant="primary" size="sm" onClick={saveEdit}><IconCheck/>保存</Btn>
+                  </>
+                ) : (
+                  <Btn variant="ghost" size="sm" onClick={startEdit}><IconPencil/>编辑</Btn>
+                )}
+              </div>
+            </div>
 
-          <div className="pv2-card__body">
-            {editing ? (
-              /* ══ EDIT MODE ══ */
-              <>
-                <div className="pv2-info-grid">
-
-                  {/* Left: basic info fields */}
-                  <section className="pv2-info-col">
-                    <div className="pv2-section-label">基本信息</div>
+            {/* Archive body: 180px KV | 1fr HPO (view) · 1fr form | 1fr HPO (edit) */}
+            <div className="panel__body" style={{padding:0}}>
+              {editing ? (
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr'}}>
+                  {/* Basic info form */}
+                  <div style={{padding:'14px 16px'}}>
+                    <div className="pv2-section-label" style={{marginBottom:12}}>基本信息</div>
                     <div className="pv2-edit-fields">
                       <label className="field">
                         <span className="field__label">姓名</span>
@@ -372,66 +382,43 @@ function PatientPanel({ patient, setRoute }) {
                         </label>
                       </div>
                     </div>
-                  </section>
-
-                  {/* Right: history fields */}
-                  <section className="pv2-info-col pv2-info-col--divider">
-                    <div className="pv2-section-label">病史摘要</div>
-                    <div className="pv2-edit-fields">
-                      <label className="field">
-                        <span className="field__label">核心症状</span>
-                        <input className="input" placeholder="如：构音障碍 · 震颤 · 肝酶升高"
-                          value={draft.coreSymptoms}
-                          onChange={e => setField('coreSymptoms', e.target.value)} />
-                      </label>
-                      <label className="field">
-                        <span className="field__label">家族史</span>
-                        <textarea className="textarea" rows={4} placeholder="描述家族遗传病史、近亲婚配情况等..."
-                          value={draft.familyHistory}
-                          onChange={e => setField('familyHistory', e.target.value)} />
-                      </label>
+                  </div>
+                  {/* HPO editor */}
+                  <div style={{padding:'14px 16px',borderLeft:'1px solid var(--border)'}}>
+                    <div className="pv2-section-label" style={{marginBottom:12}}>HPO 表型标签</div>
+                    <div className="pv2-hpo-cloud">
+                      {draft.hpoTerms.map(t => (
+                        <span key={t.id} className={`hpo${t.neg ? ' hpo--neg' : ''}`}>
+                          <span className="hpo__id">{t.id}</span>
+                          <span className="hpo__label">{t.label}</span>
+                          <span className="hpo__x" onClick={() => removeHpo(t.id)}><IconX/></span>
+                        </span>
+                      ))}
+                      {!addingHpo && (
+                        <button className="pv2-hpo-add-btn" onClick={() => setAddingHpo(true)}>
+                          <IconPlus/>添加表型
+                        </button>
+                      )}
                     </div>
-                  </section>
-
-                </div>
-
-                {/* HPO tags edit area */}
-                <div className="pv2-hpo-section">
-                  <div className="pv2-section-label">HPO 表型标签</div>
-                  <div className="pv2-hpo-cloud">
-                    {draft.hpoTerms.map(t => (
-                      <span key={t.id} className={`hpo${t.neg ? ' hpo--neg' : ''}`}>
-                        <span className="hpo__id">{t.id}</span>
-                        <span className="hpo__label">{t.label}</span>
-                        <span className="hpo__x" onClick={() => removeHpo(t.id)}><IconX /></span>
-                      </span>
-                    ))}
-                    {!addingHpo && (
-                      <button className="pv2-hpo-add-btn" onClick={() => setAddingHpo(true)}>
-                        <IconPlus />添加表型
-                      </button>
+                    {addingHpo && (
+                      <div className="pv2-hpo-add-form" style={{marginTop:10}}>
+                        <input className="input pv2-hpo-add-id" placeholder="HP:0000000"
+                          value={newHpoId} onChange={e => setNewHpoId(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && confirmAddHpo()} />
+                        <input className="input pv2-hpo-add-label" placeholder="表型描述"
+                          value={newHpoLabel} onChange={e => setNewHpoLabel(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && confirmAddHpo()} />
+                        <Btn variant="primary" size="sm" onClick={confirmAddHpo}>确认</Btn>
+                        <Btn variant="secondary" size="sm" onClick={() => { setAddingHpo(false); setNewHpoId(''); setNewHpoLabel('') }}>取消</Btn>
+                      </div>
                     )}
                   </div>
-                  {addingHpo && (
-                    <div className="pv2-hpo-add-form">
-                      <input className="input pv2-hpo-add-id" placeholder="HP:0000000"
-                        value={newHpoId} onChange={e => setNewHpoId(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && confirmAddHpo()} />
-                      <input className="input pv2-hpo-add-label" placeholder="表型描述"
-                        value={newHpoLabel} onChange={e => setNewHpoLabel(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && confirmAddHpo()} />
-                      <Btn variant="primary"   size="sm" onClick={confirmAddHpo}>确认</Btn>
-                      <Btn variant="secondary" size="sm" onClick={() => { setAddingHpo(false); setNewHpoId(''); setNewHpoLabel('') }}>取消</Btn>
-                    </div>
-                  )}
                 </div>
-              </>
-            ) : (
-              /* ══ VIEW MODE ══ */
-              <>
-                <div className="pv2-info-grid">
-                  <section className="pv2-info-col">
-                    <div className="pv2-section-label">基本信息</div>
+              ) : (
+                <div style={{display:'grid',gridTemplateColumns:'180px 1fr'}}>
+                  {/* KV column */}
+                  <div style={{padding:'14px 16px',borderRight:'1px solid var(--border)'}}>
+                    <div className="pv2-section-label" style={{marginBottom:10}}>基本信息</div>
                     <dl className="pv2-kv">
                       <dt>性别</dt>    <dd>{display.gender || '—'}</dd>
                       <dt>年龄</dt>    <dd>{display.age}岁</dd>
@@ -439,101 +426,146 @@ function PatientPanel({ patient, setRoute }) {
                       <dt>民族</dt>    <dd>{display.ethnicity || '—'}</dd>
                       <dt>近亲婚配</dt><dd>{display.consanguinity || '—'}</dd>
                       <dt>注册时间</dt><dd className="mono">{display.registeredAt || display.createdAt || '—'}</dd>
-                      <dt>最后就诊</dt><dd className="mono">{display.lastVisitAt  || display.lastAt    || '—'}</dd>
+                      <dt>最后就诊</dt><dd className="mono">{display.lastVisitAt || display.lastAt || '—'}</dd>
                     </dl>
-                  </section>
-                  <section className="pv2-info-col pv2-info-col--divider">
-                    <div className="pv2-section-label">病史摘要</div>
-                    {(display.coreSymptoms || display.summary) && (
-                      <div className="pv2-symptoms-chip">{display.coreSymptoms || display.summary}</div>
-                    )}
-                    {display.familyHistory && (
-                      <div className="pv2-family-history">
-                        <span className="pv2-family-history__label">家族史</span>
-                        {display.familyHistory}
-                      </div>
-                    )}
-                    {!display.coreSymptoms && !display.summary && !display.familyHistory && (
-                      <div className="t-3 t-sm">暂无详细病史记录</div>
-                    )}
-                  </section>
-                </div>
-
-                {(display.hpoTerms?.length > 0) && (
-                  <div className="pv2-hpo-section">
-                    <div className="pv2-section-label">HPO 表型标签</div>
-                    <div className="pv2-hpo-cloud">
-                      {display.hpoTerms.map(t => (
-                        <Hpo key={t.id} id={t.id} label={t.label} neg={t.neg} removable={false} />
-                      ))}
-                    </div>
                   </div>
-                )}
-              </>
-            )}
+                  {/* HPO column */}
+                  <div style={{padding:'14px 16px',overflowY:'auto',maxHeight:190}}>
+                    <div className="pv2-section-label" style={{marginBottom:10}}>HPO 表型标签</div>
+                    {display.hpoTerms?.length > 0 ? (
+                      <div className="pv2-hpo-cloud">
+                        {display.hpoTerms.map(t => (
+                          <Hpo key={t.id} id={t.id} label={t.label} neg={t.neg} removable={false} />
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{fontSize:'var(--fz-12)',color:'var(--text-4)'}}>暂无 HPO 表型记录</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── History panel ── */}
+          <div className={`panel${editing ? ' panel--editing' : ''}`} style={{minHeight:180}}>
+            <div className="panel__head">
+              <span className="panel__title">病史摘要</span>
+            </div>
+            <div className="panel__body">
+              {editing ? (
+                <div className="pv2-edit-fields">
+                  <label className="field">
+                    <span className="field__label">核心症状</span>
+                    <input className="input" placeholder="如：构音障碍 · 震颤 · 肝酶升高"
+                      value={draft.coreSymptoms}
+                      onChange={e => setField('coreSymptoms', e.target.value)} />
+                  </label>
+                  <label className="field">
+                    <span className="field__label">家族史</span>
+                    <textarea className="textarea" rows={8} style={{resize:'vertical'}}
+                      placeholder="描述家族遗传病史、近亲婚配情况等..."
+                      value={draft.familyHistory}
+                      onChange={e => setField('familyHistory', e.target.value)} />
+                  </label>
+                </div>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                  {(display.coreSymptoms || display.summary) && (
+                    <div className="pv2-symptoms-chip">{display.coreSymptoms || display.summary}</div>
+                  )}
+                  {display.presentText && (
+                    <div className="pv2-hist-text">{display.presentText}</div>
+                  )}
+                  {display.familyHistory && (
+                    <div className="pv2-family-history">
+                      <span className="pv2-family-history__label">家族史</span>
+                      {display.familyHistory}
+                    </div>
+                  )}
+                  {!display.coreSymptoms && !display.summary && !display.presentText && !display.familyHistory && (
+                    <span style={{fontSize:'var(--fz-13)',color:'var(--text-4)'}}>暂无病史记录</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* ══ Right 1/3 — task panel fills full height ══ */}
+        <div className="pv2-detail-right">
+          <div className="panel panel--grow">
+            <div className="panel__head">
+              <span className="panel__title">
+                诊断任务
+                {tasks.length > 0 && <span className="pv2-count-badge">{tasks.length}</span>}
+              </span>
+              <Btn variant="primary" size="sm" onClick={() => setRoute({ view:'new', patientId: patient.id })}>
+                <IconPlus/>新建
+              </Btn>
+            </div>
+            <div className="panel__body--flush">
+              {tasks.length === 0 ? (
+                <div className="pv2-task-col__empty">
+                  暂无诊断记录<br/>
+                  <span style={{fontSize:'var(--fz-12)',color:'var(--text-4)'}}>点击「新建」发起第一次诊断</span>
+                </div>
+              ) : tasks.map(task => {
+                const tab = task.type === 'VCF' ? 'vcf' : 'hpo'
+                const sub = task.status === 'running' ? 'running' : 'done'
+                return (
+                  <div
+                    key={task.id}
+                    className={`pv2-task-item pv2-task-item--${task.status}`}
+                    onClick={() => goDetail(tab, sub)}
+                  >
+                    <div className="pv2-task-item__top">
+                      <span className={`pv2-type-tag pv2-type-tag--${task.type.toLowerCase()}`}>
+                        {task.type}
+                      </span>
+                      <span className="pv2-task-item__time">{task.time}</span>
+                      {task.status === 'running'
+                        ? <span className="running-pill" style={{flexShrink:0}}><span className="spinner"/>进行中</span>
+                        : task.status === 'done'
+                          ? <StatusDot kind="ok">完成</StatusDot>
+                          : <StatusDot kind="err">失败</StatusDot>
+                      }
+                    </div>
+                    <div className="pv2-task-item__result">{task.result}</div>
+                    <div className="pv2-task-item__arrow"><IconChevron/></div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 
-        {/* ── Task history card ── */}
-        <div className="pv2-card" style={{ marginTop:16 }}>
-          <div className="pv2-card__head">
-            <span className="pv2-card__title">
-              诊断任务记录
-              {tasks.length > 0 && <span className="pv2-count-badge">{tasks.length}</span>}
-            </span>
+      </div>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════
+   Save Confirm Dialog
+   ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   Unsaved Changes Dialog
+   ══════════════════════════════════════════════ */
+function UnsavedChangesDialog({ onConfirm, onCancel }) {
+  return (
+    <div className="overlay" onClick={onCancel}>
+      <div className="dialog" style={{maxWidth:420}} onClick={e => e.stopPropagation()}>
+        <div className="dialog__head">
+          <div>
+            <div className="dialog__title">当前编辑未保存</div>
+            <div className="dialog__desc">切换患者后，当前编辑的内容将丢失。是否继续？</div>
           </div>
-
-          {tasks.length === 0 ? (
-            <div className="pv2-task-empty">暂无诊断记录</div>
-          ) : (
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th style={{ width:170, paddingLeft:20 }}>任务时间</th>
-                  <th style={{ width:64 }}>类型</th>
-                  <th>诊断结果</th>
-                  <th style={{ width:96 }}>状态</th>
-                  <th style={{ width:88, textAlign:'right', paddingRight:20 }}>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tasks.map(task => {
-                  const tab = task.type === 'VCF' ? 'vcf' : 'hpo'
-                  const sub = task.status === 'running' ? 'running' : 'done'
-                  return (
-                    <tr key={task.id}>
-                      <td className="mono" style={{ color:'var(--text-2)', paddingLeft:20, fontSize:'var(--fz-12)' }}>
-                        {task.time}
-                      </td>
-                      <td>
-                        <span className={`pv2-type-tag pv2-type-tag--${task.type.toLowerCase()}`}>
-                          {task.type}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="pv2-result-cell" title={task.result}>{task.result}</div>
-                      </td>
-                      <td>
-                        {task.status === 'running'
-                          ? <span className="running-pill"><span className="spinner" />进行中</span>
-                          : task.status === 'done'
-                            ? <StatusDot kind="ok">已完成</StatusDot>
-                            : <StatusDot kind="err">已失败</StatusDot>
-                        }
-                      </td>
-                      <td style={{ textAlign:'right', paddingRight:20 }}>
-                        <Btn variant="ghost" size="sm" onClick={() => goDetail(tab, sub)}>
-                          查看详情
-                        </Btn>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
         </div>
-
+        <div className="dialog__foot">
+          <Btn variant="ghost" size="sm" onClick={onCancel}>返回继续编辑</Btn>
+          <Btn variant="danger" size="sm" onClick={onConfirm}>放弃编辑并切换</Btn>
+        </div>
       </div>
     </div>
   )
