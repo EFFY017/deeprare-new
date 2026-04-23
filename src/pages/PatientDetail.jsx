@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Btn, Badge, Acmg, Hpo, StatusDot, MatchBar, Conf, Rank, Alert, Tabs, Segmented, Field } from '../components/primitives'
+import { Btn, Badge, Acmg, Hpo, StatusDot, MatchBar, Conf, Rank, Alert, Field } from '../components/primitives'
 import {
   IconSearch, IconPlus, IconChevron, IconDownload, IconX, IconDna, IconFile,
   IconSend, IconTrash, IconBeaker, IconUser, IconCheck, IconWarning, IconInfo,
 } from '../components/icons'
-import { PATIENTS, HERO_PATIENT, HPO_DIAG, HPO_RUNNING, VCF_RESULT, HISTORY, PATIENT_VERSIONS } from '../data/mockData'
+import { PATIENTS, HERO_PATIENT, HPO_DIAG, HPO_RUNNING, VCF_RUNNING, VCF_RESULT, TASK_MAP } from '../data/mockData'
 
 /* ============================================================
    PatientDetail · shell
@@ -12,18 +12,13 @@ import { PATIENTS, HERO_PATIENT, HPO_DIAG, HPO_RUNNING, VCF_RESULT, HISTORY, PAT
 export function PatientDetail({ route, setRoute, openDeleteDialog }) {
   const patient = PATIENTS.find(p => p.id === route.id) || HERO_PATIENT
   const isHero = patient.id === HERO_PATIENT.id
-  const [tab, setTab] = useState(route.tab || 'hpo')
-  const [sub, setSub] = useState(route.sub || 'done')
+  const tab = route.tab || 'hpo'
+  const sub = route.sub || 'done'
   const [moreOpen, setMoreOpen] = useState(false)
   const [histOpen, setHistOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
 
-  useEffect(() => { setTab(route.tab || 'hpo'); setSub(route.sub || 'done') }, [route.id, route.tab, route.sub])
-
-  const tabs = [
-    { key: 'hpo', label: 'HPO 诊断', icon: <IconUser/> },
-    { key: 'vcf', label: 'VCF 诊断', icon: <IconDna/> },
-  ]
+  const taskTypeLabel = tab === 'vcf' ? 'VCF 基因诊断' : 'HPO 表型诊断'
 
   return (
     <div className="pd-shell">
@@ -36,20 +31,17 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
 
       <div className="pd-right">
         <div className="pd-tabs-bar">
-          <Tabs items={tabs} active={tab} onChange={setTab}/>
-          <div className="pd-tabs-bar__right">
-            {tab === 'hpo' && (
-              <Segmented
-                items={[{key:'running',label:'诊断进行中'},{key:'done',label:'诊断完成'}]}
-                active={sub} onChange={setSub}/>
-            )}
+          <div className="pd-task-label">
+            {tab === 'vcf' ? <IconDna/> : <IconUser/>}
+            {taskTypeLabel}
           </div>
         </div>
 
         <div className="pd-content">
           {tab === 'hpo' && sub === 'done'    && <HpoDone/>}
           {tab === 'hpo' && sub === 'running' && <HpoRunning patientId={patient.id} setRoute={setRoute}/>}
-          {tab === 'vcf'                       && <VcfDone/>}
+          {tab === 'vcf' && sub === 'done'    && <VcfDone/>}
+          {tab === 'vcf' && sub === 'running' && <VcfRunning patientId={patient.id} setRoute={setRoute}/>}
         </div>
       </div>
 
@@ -69,16 +61,20 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
           <div className="dialog dialog--wide" onClick={e => e.stopPropagation()}>
             <div className="dialog__head" style={{alignItems:'center'}}>
               <div>
-                <div className="dialog__title">历史诊断</div>
+                <div className="dialog__title">诊断任务记录</div>
                 <div className="dialog__desc">{patient.name} · {patient.id}</div>
               </div>
               <Btn variant="ghost" size="sm" onClick={() => setHistOpen(false)} style={{marginLeft:'auto'}}><IconX/></Btn>
             </div>
             <div className="dialog__body">
-              <HistoryTab onNavigate={(tab, sub) => {
-                setHistOpen(false)
-                setRoute({ view: 'patient', id: patient.id, tab, sub })
-              }}/>
+              <HistoryTab
+                patient={patient}
+                tasks={TASK_MAP[patient.id] || []}
+                onNavigate={(t, s) => {
+                  setHistOpen(false)
+                  setRoute({ view: 'patient', id: patient.id, tab: t, sub: s })
+                }}
+              />
             </div>
           </div>
         </div>
@@ -92,41 +88,26 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
    ============================================================ */
 function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack, onHistOpen, onEditOpen }) {
   const p = isHero ? HERO_PATIENT : patient
-  const [histTip, setHistTip] = useState(false)
-  const history = isHero ? HERO_PATIENT.history : [
-    { date: patient.createdAt, title: '录入 DeepRare', meta: '本账号录入' },
-    { date: patient.lastAt,    title: '最近诊断',     meta: patient.summary },
-  ]
   return (
     <aside className="pd-left">
+      <div className="pd-left__nav-row">
+        <button className="pd-left__back-btn" onClick={onBack}>
+          <IconChevron style={{transform:'rotate(180deg)',color:'var(--text-4)'}}/>
+          返回列表
+        </button>
+        <button className="pd-left__hist-nav" onClick={onHistOpen}>
+          <IconFile/>
+          <span>诊断任务记录</span>
+          <IconChevron style={{marginLeft:'auto',color:'var(--text-4)',transform:'rotate(90deg)'}}/>
+        </button>
+      </div>
+
       <div className="pd-left__top">
         <div className="patient-id">
           <div className="patient-id__avatar">{p.name.slice(-1)}</div>
           <div style={{flex:1,minWidth:0}}>
             <div className="patient-id__name">{p.name}</div>
             <div className="patient-id__meta">{p.id} · {p.gender}</div>
-          </div>
-          <div style={{position:'relative',flexShrink:0}}>
-            <button
-              onClick={onHistOpen}
-              onMouseEnter={() => setHistTip(true)}
-              onMouseLeave={() => setHistTip(false)}
-              style={{
-                display:'grid',placeItems:'center',
-                width:28,height:28,borderRadius:'var(--r-2)',
-                border:'1px solid var(--border)',background:'var(--bg-surface)',
-                color:'var(--text-3)',cursor:'pointer',
-              }}
-            ><IconFile/></button>
-            {histTip && (
-              <div style={{
-                position:'absolute',top:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',
-                background:'var(--n-900)',color:'#fff',
-                fontSize:'var(--fz-11)',fontWeight:500,
-                padding:'4px 8px',borderRadius:'var(--r-2)',
-                whiteSpace:'nowrap',zIndex:999,pointerEvents:'none',
-              }}>查看其他诊断</div>
-            )}
           </div>
         </div>
         <dl className="kv">
@@ -154,7 +135,7 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
           </div>
           <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
             {p.hpoTerms.map(h => (
-              <Hpo key={h.id} id={h.id} label={h.label} neg={h.neg} removable={false}/>
+              <Hpo key={h.id} id={h.id} label={h.label} removable={false}/>
             ))}
           </div>
         </div>
@@ -262,7 +243,7 @@ function HpoDone() {
         <div className="panel__body" style={{paddingTop:12,paddingBottom:12}}>
           <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
             {d.hpoList.map(h => (
-              <Hpo key={h.id} id={h.id} label={h.label} neg={h.neg} removable={false}/>
+              <Hpo key={h.id} id={h.id} label={h.label} removable={false}/>
             ))}
           </div>
         </div>
@@ -620,7 +601,7 @@ function ConvoMessages({ messages }) {
    ============================================================ */
 function HpoRunning({ patientId, setRoute }) {
   const r = HPO_RUNNING
-  const [stage] = useState(3)
+  const [stage, setStage] = useState(1)
   const [hpoList, setHpoList] = useState(r.stage2.extracted)
   const [q, setQ] = useState('')
 
@@ -650,39 +631,67 @@ function HpoRunning({ patientId, setRoute }) {
           <div className="stage-card__title">
             <span className="stage-card__num">1</span>
             AI 追问症状
-            <Badge tone="ok" dot>已完成 · 3 轮问答</Badge>
+            {stage > 1
+              ? <Badge tone="ok" dot>已完成 · {r.stage1.messages.filter(m => m.from === 'user').length} 轮问答</Badge>
+              : <span className="running-pill"><span className="spinner"/>追问中</span>}
           </div>
-          <Btn variant="ghost" size="sm">查看完整对话 <IconChevron/></Btn>
+          {stage > 1 && <Btn variant="ghost" size="sm">查看完整对话 <IconChevron/></Btn>}
         </div>
         <div className="stage-card__body" style={{padding:'16px 20px'}}>
           <ConvoMessages messages={r.stage1.messages}/>
         </div>
+        {stage === 1 && (
+          <div className="stage-confirm">
+            <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>AI 已完成追问，请确认后进入 HPO 清单整理。</span>
+            <Btn variant="primary" size="sm" onClick={() => setStage(2)}>
+              <IconCheck/>确认对话完成，进入 HPO 清单
+            </Btn>
+          </div>
+        )}
       </div>
 
-      <div className={'stage-card ' + (stage > 2 ? 'is-done' : stage === 2 ? 'is-active' : '')}>
+      <div className={'stage-card ' + (stage > 2 ? 'is-done' : stage === 2 ? 'is-active' : stage < 2 ? '' : '')}>
         <div className="stage-card__head">
           <div className="stage-card__title">
             <span className="stage-card__num">2</span>
             HPO 清单确认
-            <Badge tone="ok" dot>已确认 {hpoList.length} 项</Badge>
+            {stage > 2
+              ? <Badge tone="ok" dot>已确认 {hpoList.length} 项</Badge>
+              : stage === 2
+                ? <Badge tone="info" dot>请核对并确认</Badge>
+                : null}
           </div>
-          <div className="input-wrap" style={{width:260}}>
-            <span className="input-wrap__icon"><IconSearch/></span>
-            <input className="input" placeholder="按 HPO 名称或 HP:ID 搜索..." value={q} onChange={e => setQ(e.target.value)}/>
-          </div>
+          {stage >= 2 && (
+            <div className="input-wrap" style={{width:260}}>
+              <span className="input-wrap__icon"><IconSearch/></span>
+              <input className="input" placeholder="按 HPO 名称或 HP:ID 搜索..." value={q} onChange={e => setQ(e.target.value)}/>
+            </div>
+          )}
         </div>
-        <div className="stage-card__body" style={{padding:'14px 18px'}}>
-          <div className="hpo-bag">
-            {hpoList.map(h => (
-              <span key={h.id} className={'hpo' + (h.neg ? ' hpo--neg' : '')}>
-                <span className="hpo__id">{h.id}</span>
-                <span className="hpo__label">{h.label}</span>
-                <span className="hpo__x" onClick={() => removeHpo(h.id)}><IconX/></span>
-              </span>
-            ))}
-            <button className="btn btn--secondary btn--sm" style={{height:22}}><IconPlus/>手动添加</button>
-          </div>
-        </div>
+        {stage >= 2 && (
+          <>
+            <div className="stage-card__body" style={{padding:'14px 18px'}}>
+              <div className="hpo-bag">
+                {hpoList.map(h => (
+                  <span key={h.id} className="hpo">
+                    <span className="hpo__id">{h.id}</span>
+                    <span className="hpo__label">{h.label}</span>
+                    {stage === 2 && <span className="hpo__x" onClick={() => removeHpo(h.id)}><IconX/></span>}
+                  </span>
+                ))}
+                {stage === 2 && <button className="btn btn--secondary btn--sm" style={{height:22}}><IconPlus/>手动添加</button>}
+              </div>
+            </div>
+            {stage === 2 && (
+              <div className="stage-confirm">
+                <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>共 {hpoList.length} 项 HPO 表型，确认无误后开始推理。</span>
+                <Btn variant="primary" size="sm" onClick={() => setStage(3)}>
+                  <IconCheck/>确认 HPO 清单，开始推理
+                </Btn>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <div className={'stage-card ' + (stage === 3 ? 'is-active' : '')}>
@@ -690,19 +699,77 @@ function HpoRunning({ patientId, setRoute }) {
           <div className="stage-card__title">
             <span className="stage-card__num">3</span>
             自动推理
-            <span className="running-pill"><span className="spinner"/>运行中 · 02:36</span>
+            {stage === 3 && <span className="running-pill"><span className="spinner"/>运行中 · 02:36</span>}
           </div>
-          <div className="flex gap-2" style={{alignItems:'center'}}>
-            <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>开始于 {r.stage3.startedAt}</span>
+          {stage === 3 && (
+            <div className="flex gap-2" style={{alignItems:'center'}}>
+              <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>开始于 {r.stage3.startedAt}</span>
+              <Btn variant="ghost" size="sm" onClick={handleTerminate}><IconX/>终止</Btn>
+            </div>
+          )}
+        </div>
+        {stage === 3 && (
+          <div className="stage-card__body">
+            <div className="reasoning-steps">
+              {r.stage3.steps.map((s, i) => (
+                <div key={i} className={'reasoning-step is-' + s.status}>
+                  <div className="reasoning-step__icon">
+                    {s.status === 'done' ? <IconCheck/> : i+1}
+                  </div>
+                  <div>
+                    <div className="reasoning-step__name">{s.label}</div>
+                    <div className="reasoning-step__meta">{s.meta}</div>
+                  </div>
+                  <div className="reasoning-step__status">
+                    {s.status === 'done'    && <Badge tone="ok" dot>完成</Badge>}
+                    {s.status === 'running' && <span className="running-pill"><span className="spinner"/>运行中</span>}
+                    {s.status === 'queue'   && <Badge tone="outline">等待中</Badge>}
+                  </div>
+                  <div className="reasoning-step__t">{s.t}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+/* ============================================================
+   VcfRunning
+   ============================================================ */
+function VcfRunning({ patientId, setRoute }) {
+  const r = VCF_RUNNING
+  const handleTerminate = () => setRoute({ view: 'new', patientId })
+  return (
+    <>
+      <div className="panel" style={{marginBottom:14}}>
+        <div className="panel__head">
+          <h3 className="panel__title">
+            <StatusDot kind="queue">VCF 基因诊断 · 分析中</StatusDot>
+          </h3>
+          <div style={{display:'flex',alignItems:'center',gap:16,fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
+            <span>开始于 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{r.startedAt}</b></span>
             <Btn variant="ghost" size="sm" onClick={handleTerminate}><IconX/>终止</Btn>
+          </div>
+        </div>
+      </div>
+
+      <div className="stage-card is-active">
+        <div className="stage-card__head">
+          <div className="stage-card__title">
+            <span className="stage-card__num" style={{background:'var(--info-500)',color:'#fff'}}>∞</span>
+            流水线进度
+            <span className="running-pill"><span className="spinner"/>分析中</span>
           </div>
         </div>
         <div className="stage-card__body">
           <div className="reasoning-steps">
-            {r.stage3.steps.map((s, i) => (
-              <div key={i} className={'reasoning-step is-' + s.status}>
+            {r.steps.map((s, i) => (
+              <div key={s.key} className={'reasoning-step is-' + s.status}>
                 <div className="reasoning-step__icon">
-                  {s.status === 'done' ? <IconCheck/> : i+1}
+                  {s.status === 'done' ? <IconCheck/> : i + 1}
                 </div>
                 <div>
                   <div className="reasoning-step__name">{s.label}</div>
@@ -717,7 +784,6 @@ function HpoRunning({ patientId, setRoute }) {
               </div>
             ))}
           </div>
-          
         </div>
       </div>
     </>
@@ -1148,124 +1214,83 @@ function VTabEmpty({ text }) {
 }
 
 /* ============================================================
-   HistoryTab
+   HistoryTab — task list timeline
    ============================================================ */
-function HistoryTab({ onNavigate }) {
+function HistoryTab({ patient, tasks, onNavigate }) {
+  if (!tasks.length) {
+    return (
+      <div style={{padding:'40px 24px',textAlign:'center',fontSize:'var(--fz-13)',color:'var(--text-4)'}}>
+        暂无诊断任务记录
+      </div>
+    )
+  }
+
+  const histSummary = patient.coreSymptoms || patient.summary || ''
+
   return (
     <div style={{padding:'20px 24px',display:'flex',flexDirection:'column',gap:0}}>
-      {PATIENT_VERSIONS.map((ver, vi) => (
-        <div key={ver.v} style={{display:'flex',gap:0}}>
-          {/* timeline spine */}
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',width:32,flexShrink:0}}>
-            <div style={{
-              width:22,height:22,borderRadius:'50%',flexShrink:0,
-              background: vi === 0 ? 'var(--accent)' : 'var(--n-200)',
-              color: vi === 0 ? '#fff' : 'var(--text-3)',
-              display:'grid',placeItems:'center',
-              fontSize:'var(--fz-11)',fontWeight:700,fontFamily:'var(--font-mono)',
-            }}>{ver.v}</div>
-            {vi < PATIENT_VERSIONS.length - 1 && (
-              <div style={{flex:1,width:2,background:'var(--border)',minHeight:24,margin:'4px 0'}}/>
-            )}
-          </div>
-
-          {/* version card */}
-          <div style={{flex:1,marginLeft:14,paddingBottom: vi < PATIENT_VERSIONS.length - 1 ? 24 : 0}}>
-            {/* card header */}
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-              <span style={{fontWeight:700,fontSize:'var(--fz-14)'}}>{ver.date}</span>
-              {vi === 0 && <Badge tone="brand" dot>最新版本</Badge>}
-              <span style={{fontFamily:'var(--font-mono)',fontSize:'var(--fz-12)',color:'var(--text-3)'}}>version {ver.v} </span>
-              <span style={{fontSize:'var(--fz-12)',color:'var(--text-4)'}}>· {ver.updatedBy}</span>
-              <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)',marginLeft:4}}>{ver.changeNote}</span>
+      {tasks.map((task, ti) => {
+        const tab = task.type === 'VCF' ? 'vcf' : 'hpo'
+        const sub = task.status === 'running' ? 'running' : 'done'
+        const dotColor = task.status === 'done' ? 'var(--ok-500)' : task.status === 'running' ? 'var(--accent)' : 'var(--err-500)'
+        return (
+          <div key={task.id} style={{display:'flex',gap:0}}>
+            {/* timeline spine */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',width:28,flexShrink:0}}>
+              <div style={{
+                width:10,height:10,borderRadius:'50%',flexShrink:0,
+                background:dotColor,marginTop:5,
+              }}/>
+              {ti < tasks.length - 1 && (
+                <div style={{flex:1,width:2,background:'var(--border)',minHeight:20,margin:'4px 0'}}/>
+              )}
             </div>
 
-            <div style={{background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:'var(--r-4)',overflow:'hidden'}}>
-              {/* HPO terms */}
-              <div style={{padding:'12px 16px',borderBottom:'1px solid var(--border)'}}>
-                <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-4)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
-                  HPO 表型
-                  <span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontFamily:'var(--font-mono)',color:'var(--text-4)'}}>· {ver.hpoTerms.length} 项</span>
-                </div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                  {ver.hpoTerms.map(h => <Hpo key={h.id} id={h.id} label={h.label} neg={h.neg} removable={false}/>)}
-                </div>
+            {/* task card */}
+            <div style={{flex:1,marginLeft:12,paddingBottom: ti < tasks.length - 1 ? 20 : 0}}>
+              {/* header row: time + type badge + status */}
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap'}}>
+                <span style={{fontFamily:'var(--font-mono)',fontSize:'var(--fz-12)',fontWeight:600,color:'var(--text-2)'}}>{task.time}</span>
+                <span className={`pv2-type-tag pv2-type-tag--${task.type.toLowerCase()}`}>{task.type}</span>
+                {task.status === 'running'
+                  ? <span className="running-pill"><span className="spinner"/>进行中</span>
+                  : task.status === 'done'
+                    ? <StatusDot kind="ok">完成</StatusDot>
+                    : <StatusDot kind="err">失败</StatusDot>
+                }
+                <span style={{fontFamily:'var(--font-mono)',fontSize:'var(--fz-11)',color:'var(--text-4)',marginLeft:'auto'}}>{task.id}</span>
               </div>
 
-              {/* analyses */}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr'}}>
-                {/* HPO analyses */}
-                <div style={{padding:'12px 16px',borderRight:'1px solid var(--border)'}}>
-                  <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-4)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
-                    HPO 表型诊断
-                    <span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontFamily:'var(--font-mono)'}}>· {ver.hpoAnalyses.length} 次</span>
-                  </div>
-                  {ver.hpoAnalyses.length === 0
-                    ? <div style={{fontSize:'var(--fz-12)',color:'var(--text-4)'}}>未发起</div>
-                    : (
-                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                        {ver.hpoAnalyses.map(a => (
-                          <div key={a.id} style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:'var(--fz-12)'}}>
-                            <StatusDot kind={a.status === 'done' ? 'ok' : a.status === 'failed' ? 'err' : 'queue'}>
-                              {a.status === 'done' ? '完成' : a.status === 'failed' ? '失败' : '进行中'}
-                            </StatusDot>
-                            <div style={{flex:1,minWidth:0}}>
-                              <span style={{fontFamily:'var(--font-mono)',color:'var(--text-4)',fontSize:'var(--fz-11)',marginRight:6}}>{a.id}</span>
-                              <span style={{color:'var(--text-3)',fontSize:'var(--fz-11)'}}>{a.date}</span>
-                              {a.status === 'done' && a.top1 !== '—' && (
-                                <div style={{marginTop:2,color:'var(--text-1)',fontWeight:500}}>
-                                  Top 1: {a.top1}
-                                  <span style={{marginLeft:6,fontFamily:'var(--font-mono)',color:'var(--accent)',fontWeight:600}}>{a.match}%</span>
-                                  {a.conf != null && <span style={{marginLeft:4,color:'var(--text-3)'}}>置信度 {a.conf}</span>}
-                                </div>
-                              )}
-                              {a.status === 'failed' && (
-                                <div style={{marginTop:2,color:'var(--text-4)'}}>由医生手动终止</div>
-                              )}
-                            </div>
-                            {a.status === 'done' && (
-                              <Btn variant="ghost" size="sm" onClick={() => onNavigate('hpo', 'done')}>查看详情<IconChevron/></Btn>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  }
+              {/* patient history summary at this time */}
+              {histSummary && (
+                <div style={{
+                  fontSize:'var(--fz-12)',color:'var(--text-3)',lineHeight:1.5,
+                  marginBottom:8,paddingLeft:2,
+                }}>
+                  {histSummary}
                 </div>
+              )}
 
-                {/* VCF analyses */}
-                <div style={{padding:'12px 16px'}}>
-                  <div style={{fontSize:'var(--fz-11)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--text-4)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
-                    VCF 基因诊断
-                    <span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontFamily:'var(--font-mono)'}}>· {ver.vcfAnalyses.length} 次</span>
-                  </div>
-                  {ver.vcfAnalyses.length === 0
-                    ? <div style={{fontSize:'var(--fz-12)',color:'var(--text-4)'}}>未发起</div>
-                    : (
-                      <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                        {ver.vcfAnalyses.map(a => (
-                          <div key={a.id} style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:'var(--fz-12)'}}>
-                            <StatusDot kind={a.status === 'done' ? 'ok' : a.status === 'failed' ? 'err' : 'queue'}>
-                              {a.status === 'done' ? '完成' : a.status === 'failed' ? '失败' : '进行中'}
-                            </StatusDot>
-                            <div style={{flex:1,minWidth:0}}>
-                              <span style={{fontFamily:'var(--font-mono)',color:'var(--text-4)',fontSize:'var(--fz-11)',marginRight:6}}>{a.id}</span>
-                              <span style={{color:'var(--text-3)',fontSize:'var(--fz-11)'}}>{a.date}</span>
-                              <div style={{marginTop:2,color: a.status === 'failed' ? 'var(--text-4)' : 'var(--text-1)',fontWeight: a.status === 'done' ? 500 : 400}}>
-                                {a.result}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  }
+              {/* task result card */}
+              <div style={{
+                background:'var(--bg-surface)',border:'1px solid var(--border)',
+                borderRadius:'var(--r-3)',padding:'10px 12px',
+                display:'flex',alignItems:'center',gap:10,
+              }}>
+                <div style={{flex:1,fontSize:'var(--fz-13)',color:'var(--text-2)',lineHeight:1.55}}>
+                  {task.result}
                 </div>
+                {task.status !== 'failed' && (
+                  <Btn variant="ghost" size="sm" style={{flexShrink:0}}
+                    onClick={() => onNavigate(tab, sub)}>
+                    查看详情<IconChevron/>
+                  </Btn>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -1365,7 +1390,7 @@ function EditDialog({ patient, onClose, onSave }) {
               <SectionHead n="2" title="HPO 表型" hint={`当前 ${hpoList.length} 项`}/>
               <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
                 {hpoList.map(h => (
-                  <Hpo key={h.id} id={h.id} label={h.label} neg={h.neg}
+                  <Hpo key={h.id} id={h.id} label={h.label}
                     removable onRemove={() => removeHpo(h.id)}/>
                 ))}
                 {hpoList.length === 0 && (

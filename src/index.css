@@ -1743,6 +1743,54 @@ body { background: var(--bg-sunken); }
   overflow-y: auto;
   display: flex; flex-direction: column;
 }
+.pd-left__nav-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 14px;
+  flex-shrink: 0;
+}
+.pd-left__back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-3);
+  background: var(--bg-surface);
+  color: var(--text-2);
+  font-size: var(--fz-12);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+  white-space: nowrap;
+}
+.pd-left__back-btn:hover { background: var(--bg-hover); border-color: var(--n-300); color: var(--text-1); }
+.pd-left__back-btn:focus-visible { outline: none; box-shadow: var(--sh-focus); }
+.pd-left__hist-nav {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-3);
+  background: var(--bg-surface);
+  color: var(--text-2);
+  font-size: var(--fz-12);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+  text-align: left;
+}
+.pd-left__hist-nav:hover { background: var(--bg-hover); border-color: var(--n-300); color: var(--text-1); }
+.pd-left__hist-nav:focus-visible { outline: none; box-shadow: var(--sh-focus); }
 .pd-left__top { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
 .pd-left__section { padding: 16px 18px; border-bottom: 1px solid var(--border); }
 .pd-left__section:last-of-type { border-bottom: none; }
@@ -1800,6 +1848,11 @@ body { background: var(--bg-sunken); }
 }
 .pd-tabs-bar .tabs { flex: 1; border-bottom: none; }
 .pd-tabs-bar__right { display: flex; gap: 8px; align-items: center; padding: 8px 0; }
+.pd-task-label {
+  display: flex; align-items: center; gap: 6px;
+  padding: 12px 0;
+  font-size: var(--fz-13); font-weight: 600; color: var(--text-2);
+}
 
 .pd-content { padding: 20px 32px 40px; }
 
@@ -2316,6 +2369,39 @@ body { background: var(--bg-sunken); }
   border-top: 1px solid var(--border);
   background: var(--bg-sunken);
   flex-shrink: 0;
+}
+
+.pv2-side__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+.pv2-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-surface);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.pv2-page-btn:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--n-300); }
+.pv2-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pv2-page-info {
+  font-size: var(--fz-12);
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  min-width: 36px;
+  text-align: center;
 }
 
 /* ── Patient row in sidebar ── */
@@ -3257,4 +3343,92 @@ body { background: var(--bg-sunken); }
   padding: 14px 20px;
   background: var(--bg-sunken);
   gap: 12px;
+}
+
+/* ── Upload zone states ── */
+.upload--uploading {
+  cursor: default;
+  pointer-events: none;
+}
+.upload--uploading:hover {
+  background: var(--bg-sunken);
+  border-color: var(--border-strong);
+  color: var(--text-3);
+}
+.upload__progress-bar {
+  height: 6px;
+  background: var(--n-150);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  margin-top: 12px;
+}
+.upload__progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--r-pill);
+  transition: width .2s linear;
+}
+.upload__file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--ok-500);
+  border-radius: var(--r-4);
+  background: color-mix(in srgb, var(--ok-50) 60%, var(--bg-surface));
+}
+.upload__file-name {
+  font-size: var(--fz-13);
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.upload__file-size {
+  font-size: var(--fz-11);
+  color: var(--text-4);
+  font-family: var(--font-mono);
+}
+.upload--error {
+  border-color: var(--err-500);
+  background: var(--err-50);
+  cursor: default;
+}
+.upload--error:hover {
+  background: var(--err-50);
+  border-color: var(--err-500);
+  color: var(--text-3);
+}
+.upload__error-msg {
+  font-size: var(--fz-12);
+  color: var(--err-700);
+  margin-top: 4px;
+}
+.upload--field-error {
+  border-color: var(--err-500);
+  background: color-mix(in srgb, var(--err-50) 40%, var(--bg-sunken));
+}
+.upload--field-error:hover {
+  border-color: var(--err-500);
+  background: color-mix(in srgb, var(--err-50) 60%, var(--bg-sunken));
+}
+
+/* ── Field error label ── */
+.field__label--error { color: var(--err-600, var(--err-700)); }
+
+/* ── Input error border (class-based, same as aria-invalid) ── */
+.input--error { border-color: var(--err-500) !important; }
+.input--error:focus { box-shadow: 0 0 0 3px rgba(178,74,69,.22) !important; }
+
+/* ── Stage confirm footer ── */
+.stage-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sunken);
+  border-radius: 0 0 var(--r-4) var(--r-4);
 }

@@ -53,7 +53,7 @@ export const PATIENTS = [
       { id: "HP:0001397", label: "肝脂肪变性 / 肝酶升高" },
       { id: "HP:0200136", label: "Kayser-Fleischer 环" },
       { id: "HP:0002172", label: "伸展肢体僵硬" },
-      { id: "HP:0000718", label: "攻击行为", neg: true },
+      { id: "HP:0000718", label: "攻击行为" },
     ]},
   { id: "P-2024-0298", name: "李雅琪", age: 6,  gender: "女", summary: "发育迟缓 · 特殊面容 · 房间隔缺损",    hpoCount: 1, vcfCount: 0, createdAt: "2024-08-21", lastAt: "2025-01-08", status: "diagnosed",
     hpoTerms: [
@@ -86,7 +86,7 @@ export const PATIENTS = [
       { id: "HP:0002027", label: "反复发作性腹痛" },
       { id: "HP:0000992", label: "皮肤光敏感" },
       { id: "HP:0040315", label: "尿液变色" },
-      { id: "HP:0001929", label: "溶血性贫血", neg: true },
+      { id: "HP:0001929", label: "溶血性贫血" },
     ]},
   { id: "P-2025-0018", name: "赵敏捷", age: 5,  gender: "男", summary: "反复感染 · 湿疹 · 血小板减少",          hpoCount: 1, vcfCount: 0, createdAt: "2025-01-09", lastAt: "2025-01-15", status: "running",
     hpoTerms: [
@@ -111,6 +111,36 @@ export const PATIENTS = [
       { id: "HP:0002493", label: "上运动神经元损害" },
       { id: "HP:0002061", label: "痉挛性截瘫" },
       { id: "HP:0007340", label: "下肢肌无力" },
+    ]},
+  { id: "P-2024-0128", name: "孙梦琳", age: 19, gender: "女", summary: "关节过度活动 · 皮肤弹性过强 · 反复脱臼", hpoCount: 1, vcfCount: 0, createdAt: "2024-01-15", lastAt: "2024-07-30", status: "diagnosed",
+    hpoTerms: [
+      { id: "HP:0001382", label: "关节过度活动" },
+      { id: "HP:0000975", label: "皮肤过度伸展" },
+      { id: "HP:0001373", label: "关节脱位" },
+    ]},
+  { id: "P-2023-0412", name: "钱伟博", age: 55, gender: "男", summary: "多发性神经病 · 心肌病 · 角膜混浊",       hpoCount: 2, vcfCount: 1, createdAt: "2023-11-08", lastAt: "2024-06-12", status: "diagnosed",
+    hpoTerms: [
+      { id: "HP:0001271", label: "多发性神经病" },
+      { id: "HP:0001638", label: "心肌病" },
+      { id: "HP:0007957", label: "角膜混浊" },
+    ]},
+  { id: "P-2023-0389", name: "何秀芳", age: 8,  gender: "女", summary: "智力障碍 · 癫痫 · 皮肤色素脱失",         hpoCount: 1, vcfCount: 0, createdAt: "2023-10-22", lastAt: "2024-05-18", status: "review",
+    hpoTerms: [
+      { id: "HP:0001249", label: "智力障碍" },
+      { id: "HP:0001250", label: "癫痫发作" },
+      { id: "HP:0001010", label: "皮肤色素减退" },
+    ]},
+  { id: "P-2023-0355", name: "徐志远", age: 33, gender: "男", summary: "进行性小脑性共济失调 · 眼球运动异常",    hpoCount: 1, vcfCount: 1, createdAt: "2023-09-05", lastAt: "2024-04-09", status: "diagnosed",
+    hpoTerms: [
+      { id: "HP:0001251", label: "小脑性共济失调" },
+      { id: "HP:0000496", label: "眼球运动异常" },
+      { id: "HP:0002072", label: "舞蹈样动作" },
+    ]},
+  { id: "P-2023-0301", name: "冯晓燕", age: 12, gender: "女", summary: "先天性心脏病 · 矮小症 · 蹼颈",           hpoCount: 0, vcfCount: 1, createdAt: "2023-07-19", lastAt: "2024-03-25", status: "diagnosed",
+    hpoTerms: [
+      { id: "HP:0001627", label: "先天性心脏病" },
+      { id: "HP:0004322", label: "身材矮小" },
+      { id: "HP:0000465", label: "蹼颈" },
     ]},
 ]
 
@@ -160,7 +190,7 @@ export const HPO_DIAG = {
     { id: "HP:0001397", label: "肝脂肪变性 / 肝酶升高" },
     { id: "HP:0200136", label: "Kayser-Fleischer 环" },
     { id: "HP:0002172", label: "伸展肢体僵硬" },
-    { id: "HP:0000718", label: "攻击行为", neg: true },
+    { id: "HP:0000718", label: "攻击行为" },
   ],
   top5: [
     { rank: 1, name: "Wilson Disease", nameCn: "肝豆状核变性", omim: "OMIM:277900", orpha: "ORPHA:905", match: 92.4, conf: "94%", level: "high", gene: "ATP7B", inherit: "AR", summary: "铜代谢障碍, 累及肝、脑、角膜。青少年起病, ATP7B 基因突变。" },
@@ -275,12 +305,12 @@ export const HPO_RUNNING = {
   },
   stage2: {
     extracted: [
-      { id: "HP:0001300", label: "锥体外系症状 (震颤)", source: "AI 提取" },
+      { id: "HP:0001300", label: "锥体外系症状 (震颤)" },
       { id: "HP:0001260", label: "构音障碍",            source: "AI 提取" },
-      { id: "HP:0001397", label: "肝脂肪变性 / 肝酶升高", source: "AI 提取" },
+      { id: "HP:0001397", label: "肝脂肪变性 / 肝酶升高" },
       { id: "HP:0200136", label: "Kayser-Fleischer 环",  source: "医生补充" },
       { id: "HP:0002172", label: "伸展肢体僵硬",        source: "AI 提取" },
-      { id: "HP:0000718", label: "攻击行为", neg: true, source: "医生否定" },
+      { id: "HP:0000718", label: "攻击行为" },
     ],
   },
   stage3: {
@@ -300,6 +330,20 @@ export const HPO_RUNNING = {
       { t: "02:36", text: "K-F 环阳性 → Wilson Disease 权重 +0.18" },
     ],
   },
+}
+
+export const VCF_RUNNING = {
+  startedAt: "2025-01-15 10:08",
+  steps: [
+    { key: "qc",        label: "质控筛查",     status: "done",    meta: "通过率 98.2%",                          t: "00:18" },
+    { key: "anno",      label: "变异注释",      status: "done",    meta: "共注释 48,923 个变异位点",              t: "01:12" },
+    { key: "filter",    label: "变异过滤",      status: "done",    meta: "已过滤出 214 条高质量数据",             t: "00:34" },
+    { key: "interp",    label: "变异解读",      status: "running", meta: "正在解读候选变异 · 7 / 9 已处理",      t: "02:41" },
+    { key: "acmg",      label: "ACMG 评分",     status: "queue",   meta: "基于 ACMG 评分体系分析",               t: "—" },
+    { key: "predict",   label: "预测工具分析",  status: "queue",   meta: "外部预测工具分析",                      t: "—" },
+    { key: "interpdone",label: "解读完成",      status: "queue",   meta: "变异解读完成",                          t: "—" },
+    { key: "report",    label: "报告生成",      status: "queue",   meta: "报告生成中",                            t: "—" },
+  ],
 }
 
 export const VCF_RESULT = {
@@ -386,6 +430,47 @@ export const VCF_RESULT = {
   ],
 }
 
+export const TASK_MAP = {
+  'P-2024-0317': [
+    { id:'H-007', type:'VCF', time:'2025-01-14 20:36', result:'ATP7B 复合杂合 (c.2333G>T / c.3443T>C)，确诊 Wilson Disease', status:'done' },
+    { id:'H-006', type:'HPO', time:'2024-11-21 16:38', result:'Top 1 Wilson Disease 匹配 92.4%，置信度 94%', status:'done' },
+    { id:'H-005', type:'HPO', time:'2024-10-08 11:02', result:'Top 1 Juvenile Huntington Disease 61%，建议补充 K-F 环检查', status:'done' },
+    { id:'H-004', type:'VCF', time:'2024-09-12 14:22', result:'VCF 文件 chromosome 命名不匹配，已终止', status:'failed' },
+    { id:'H-003', type:'HPO', time:'2024-09-02 09:18', result:'提示铜代谢障碍，建议完善铜蓝蛋白检查', status:'done' },
+  ],
+  'P-2024-0298': [
+    { id:'H-021', type:'HPO', time:'2025-01-08 14:20', result:'Top 1 Down Syndrome 匹配 84.2%，置信度 89%', status:'done' },
+  ],
+  'P-2025-0011': [
+    { id:'H-031', type:'HPO', time:'2025-01-15 10:05', result:'AI 推理进行中...', status:'running' },
+    { id:'H-030', type:'VCF', time:'2025-01-10 09:22', result:'变异筛选完成，候选基因 3 个', status:'done' },
+  ],
+  'P-2024-0256': [
+    { id:'H-042', type:'VCF', time:'2024-12-28 16:44', result:'FBN1 致病变异 (p.Cys1663Ser)，确诊 Marfan Syndrome', status:'done' },
+    { id:'H-041', type:'HPO', time:'2024-11-15 11:30', result:'Top 1 Marfan Syndrome 匹配 88.6%', status:'done' },
+  ],
+  'P-2024-0244': [
+    { id:'H-051', type:'HPO', time:'2024-12-02 09:15', result:'Top 1 Duchenne 肌营养不良 匹配 76.3%，待复核', status:'done' },
+  ],
+  'P-2024-0211': [
+    { id:'H-062', type:'VCF', time:'2024-11-09 20:11', result:'HMBS 致病变异，确诊急性间歇性血卟啉病', status:'done' },
+    { id:'H-061', type:'HPO', time:'2024-09-30 13:45', result:'Top 1 急性间歇性血卟啉病 匹配 81.5%', status:'done' },
+  ],
+  'P-2025-0018': [
+    { id:'H-071', type:'HPO', time:'2025-01-15 08:30', result:'AI 推理进行中...', status:'running' },
+  ],
+  'P-2024-0189': [
+    { id:'H-082', type:'VCF', time:'2024-10-15 17:22', result:'RPGR 致病变异，确诊 X 染色体连锁视网膜色素变性', status:'done' },
+    { id:'H-081', type:'HPO', time:'2024-08-11 10:30', result:'Top 1 视网膜色素变性 匹配 91.2%', status:'done' },
+  ],
+  'P-2024-0167': [
+    { id:'H-091', type:'HPO', time:'2024-09-21 14:05', result:'Top 1 成骨不全症 Type I 匹配 86.7%', status:'done' },
+  ],
+  'P-2024-0144': [
+    { id:'H-101', type:'HPO', time:'2024-08-18 10:22', result:'HPO 表型信息不足，无法完成诊断', status:'failed' },
+  ],
+}
+
 export const HISTORY = [
   { id: "H-007", type: "VCF", startedAt: "2025-01-14 20:36", duration: "42 分 18 秒", status: "done",    summary: "ATP7B 复合杂合 (c.2333G>T / c.3443T>C), 确诊 Wilson Disease" },
   { id: "H-006", type: "HPO", startedAt: "2024-11-21 16:38", duration: "4 分 12 秒",  status: "done",    summary: "Top 1 Wilson Disease 匹配度 92.4%, 置信度 94/100" },
@@ -407,7 +492,7 @@ export const PATIENT_VERSIONS = [
       { id: "HP:0001397", label: "肝脂肪变性 / 肝酶升高" },
       { id: "HP:0200136", label: "Kayser-Fleischer 环" },
       { id: "HP:0002172", label: "伸展肢体僵硬" },
-      { id: "HP:0000718", label: "攻击行为", neg: true },
+      { id: "HP:0000718", label: "攻击行为" },
     ],
     hpoAnalyses: [
       { id: "H-006", date: "2024-11-21 16:38", status: "done",   top1: "Wilson Disease",           match: 92.4, conf: 94 },

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Btn, StatusDot, Hpo } from '../components/primitives'
 import { IconSearch, IconPlus, IconChevron, IconX, IconCheck, IconEye, IconEyeOff, IconWarning } from '../components/icons'
-import { PATIENTS, HERO_PATIENT } from '../data/mockData'
+import { PATIENTS, HERO_PATIENT, TASK_MAP } from '../data/mockData'
 
 const IconPencil = () => (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
@@ -9,48 +9,6 @@ const IconPencil = () => (
     <path d="M7.5 4 10 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
   </svg>
 )
-
-/* ---------- Per-patient task records ---------- */
-const TASK_MAP = {
-  'P-2024-0317': [
-    { id:'H-007', type:'VCF', time:'2025-01-14 20:36', result:'ATP7B 复合杂合 (c.2333G>T / c.3443T>C)，确诊 Wilson Disease', status:'done' },
-    { id:'H-006', type:'HPO', time:'2024-11-21 16:38', result:'Top 1 Wilson Disease 匹配 92.4%，置信度 94%', status:'done' },
-    { id:'H-005', type:'HPO', time:'2024-10-08 11:02', result:'Top 1 Juvenile Huntington Disease 61%，建议补充 K-F 环检查', status:'done' },
-    { id:'H-004', type:'VCF', time:'2024-09-12 14:22', result:'VCF 文件 chromosome 命名不匹配，已终止', status:'failed' },
-    { id:'H-003', type:'HPO', time:'2024-09-02 09:18', result:'提示铜代谢障碍，建议完善铜蓝蛋白检查', status:'done' },
-  ],
-  'P-2024-0298': [
-    { id:'H-021', type:'HPO', time:'2025-01-08 14:20', result:'Top 1 Down Syndrome 匹配 84.2%，置信度 89%', status:'done' },
-  ],
-  'P-2025-0011': [
-    { id:'H-031', type:'HPO', time:'2025-01-15 10:05', result:'AI 推理进行中...', status:'running' },
-    { id:'H-030', type:'VCF', time:'2025-01-10 09:22', result:'变异筛选完成，候选基因 3 个', status:'done' },
-  ],
-  'P-2024-0256': [
-    { id:'H-042', type:'VCF', time:'2024-12-28 16:44', result:'FBN1 致病变异 (p.Cys1663Ser)，确诊 Marfan Syndrome', status:'done' },
-    { id:'H-041', type:'HPO', time:'2024-11-15 11:30', result:'Top 1 Marfan Syndrome 匹配 88.6%', status:'done' },
-  ],
-  'P-2024-0244': [
-    { id:'H-051', type:'HPO', time:'2024-12-02 09:15', result:'Top 1 Duchenne 肌营养不良 匹配 76.3%，待复核', status:'done' },
-  ],
-  'P-2024-0211': [
-    { id:'H-062', type:'VCF', time:'2024-11-09 20:11', result:'HMBS 致病变异，确诊急性间歇性血卟啉病', status:'done' },
-    { id:'H-061', type:'HPO', time:'2024-09-30 13:45', result:'Top 1 急性间歇性血卟啉病 匹配 81.5%', status:'done' },
-  ],
-  'P-2025-0018': [
-    { id:'H-071', type:'HPO', time:'2025-01-15 08:30', result:'AI 推理进行中...', status:'running' },
-  ],
-  'P-2024-0189': [
-    { id:'H-082', type:'VCF', time:'2024-10-15 17:22', result:'RPGR 致病变异，确诊 X 染色体连锁视网膜色素变性', status:'done' },
-    { id:'H-081', type:'HPO', time:'2024-08-11 10:30', result:'Top 1 视网膜色素变性 匹配 91.2%', status:'done' },
-  ],
-  'P-2024-0167': [
-    { id:'H-091', type:'HPO', time:'2024-09-21 14:05', result:'Top 1 成骨不全症 Type I 匹配 86.7%', status:'done' },
-  ],
-  'P-2024-0144': [
-    { id:'H-101', type:'HPO', time:'2024-08-18 10:22', result:'HPO 表型信息不足，无法完成诊断', status:'failed' },
-  ],
-}
 
 /* ---------- Supplemental patient info ---------- */
 const PATIENT_EXTRA = {
@@ -72,7 +30,9 @@ const STATUS_META = {
   failed:    { kind:'err',     label:'诊断失败' },
 }
 
-export default function PageListV2({ setRoute }) {
+const PAGE_SIZE = 8
+
+export default function PageListV2({ setRoute, onEditingChange }) {
   const [q, setQ]               = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [hideNames, setHideNames]   = useState(() => {
@@ -80,10 +40,16 @@ export default function PageListV2({ setRoute }) {
   })
   const [isEditing,  setIsEditing]  = useState(false)
   const [pendingId,  setPendingId]  = useState(null)
+  const [page,       setPage]       = useState(1)
 
   useEffect(() => {
     try { localStorage.setItem('dr-hide-names', hideNames) } catch {}
   }, [hideNames])
+
+  const handleEditingChange = (v) => {
+    setIsEditing(v)
+    onEditingChange?.(v)
+  }
 
   const handleSelectPatient = (id) => {
     if (isEditing && id !== selectedId) { setPendingId(id); return }
@@ -99,6 +65,11 @@ export default function PageListV2({ setRoute }) {
       (p.summary && p.summary.toLowerCase().includes(qq))
     )
   }, [q])
+
+  useEffect(() => { setPage(1) }, [filtered])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   /* Merge supplemental data for selected patient */
   const patient = useMemo(() => {
@@ -154,7 +125,7 @@ export default function PageListV2({ setRoute }) {
         </div>
 
         <div className="pv2-side__list">
-          {filtered.map(p => {
+          {paged.map(p => {
             const sm = STATUS_META[p.status] || { kind:'queue', label:'—' }
             const isActive = selectedId === p.id
             return (
@@ -188,18 +159,34 @@ export default function PageListV2({ setRoute }) {
           )}
         </div>
 
-        {/* <div className="pv2-side__foot">
-          <Btn variant="primary" size="sm" style={{ width:'100%', justifyContent:'center' }} onClick={() => setRoute({ view:'new' })}>
-            <IconPlus />新建诊断
-          </Btn>
-        </div> */}
+        {totalPages > 1 && (
+          <div className="pv2-side__pagination">
+            <button
+              className="pv2-page-btn"
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+            >
+              <IconChevron style={{transform:'rotate(180deg)'}}/>
+            </button>
+            <span className="pv2-page-info">
+              {page} / {totalPages}
+            </span>
+            <button
+              className="pv2-page-btn"
+              disabled={page === totalPages}
+              onClick={() => setPage(p => p + 1)}
+            >
+              <IconChevron/>
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* ── RIGHT MAIN ── */}
       <main className="pv2-main">
         {!patient
           ? <EmptyState setRoute={setRoute} />
-          : <PatientPanel patient={patient} setRoute={setRoute} onEditingChange={setIsEditing} />
+          : <PatientPanel patient={patient} setRoute={setRoute} onEditingChange={handleEditingChange} />
         }
       </main>
 
@@ -240,6 +227,7 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
   const [newHpoId,    setNewHpoId]    = useState('')
   const [newHpoLabel, setNewHpoLabel] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
+  const [pendingTaskNav, setPendingTaskNav] = useState(null)
 
   /* reset on patient switch */
   useEffect(() => {
@@ -290,17 +278,29 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
   }
 
   const goDetail = (tab = 'hpo', sub = 'done') => {
+    if (editing) { setPendingTaskNav({ tab, sub }); return }
     setRoute({ view: 'patient', id: patient.id, tab, sub })
   }
 
   return (
     <div className="pv2-profile">
 
+      {pendingTaskNav && (
+        <UnsavedChangesDialog
+          onConfirm={() => {
+            cancelEdit()
+            setRoute({ view: 'patient', id: patient.id, ...pendingTaskNav })
+            setPendingTaskNav(null)
+          }}
+          onCancel={() => setPendingTaskNav(null)}
+        />
+      )}
+
       {showConfirm && (
         <SaveConfirmDialog
           onClose={() => setShowConfirm(false)}
           onSaveOnly={() => commitSave()}
-          onVCF={() => commitSave(() => setRoute({ view:'new', patientId: patient.id }))}
+          onVCF={() => commitSave(() => setRoute({ view:'new', patientId: patient.id, tab: 'vcf' }))}
           onHPO={() => commitSave(() => setRoute({ view:'new', patientId: patient.id }))}
         />
       )}
@@ -415,13 +415,12 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
                   </div>
                 </div>
               ) : (
-                <div style={{display:'grid',gridTemplateColumns:'180px 1fr'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 2fr'}}>
                   {/* KV column */}
                   <div style={{padding:'14px 16px',borderRight:'1px solid var(--border)'}}>
                     <div className="pv2-section-label" style={{marginBottom:10}}>基本信息</div>
                     <dl className="pv2-kv">
                       <dt>性别</dt>    <dd>{display.gender || '—'}</dd>
-                      <dt>年龄</dt>    <dd>{display.age}岁</dd>
                       <dt>出生日期</dt><dd className="mono">{display.dob || '—'}</dd>
                       <dt>民族</dt>    <dd>{display.ethnicity || '—'}</dd>
                       <dt>近亲婚配</dt><dd>{display.consanguinity || '—'}</dd>
@@ -435,7 +434,7 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
                     {display.hpoTerms?.length > 0 ? (
                       <div className="pv2-hpo-cloud">
                         {display.hpoTerms.map(t => (
-                          <Hpo key={t.id} id={t.id} label={t.label} neg={t.neg} removable={false} />
+                          <Hpo key={t.id} id={t.id} label={t.label} removable={false} />
                         ))}
                       </div>
                     ) : (
