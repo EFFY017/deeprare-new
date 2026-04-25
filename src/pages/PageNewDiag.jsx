@@ -211,117 +211,122 @@ export default function PageNewDiag({ route, setRoute }) {
                 {isReadonly && <div className="newdiag__section-hint">基本信息已预填，仅下方病史可追加</div>}
               </div>
 
-              <div className="form-grid">
-                <Field label="姓名" required error={errors.name}>
-                  <input className={'input' + (errors.name ? ' input--error' : '')}
-                    value={form.name} readOnly={isReadonly}
-                    onChange={e => { setForm({...form, name: e.target.value}); setErrors(v => ({...v, name: ''})) }}
-                    placeholder="如: 张三"/>
-                </Field>
-                <Field label="性别" required error={errors.gender}>
-                  <select className={'select' + (errors.gender ? ' input--error' : '')}
-                    value={form.gender} disabled={isReadonly}
-                    onChange={e => { setForm({...form, gender: e.target.value}); setErrors(v => ({...v, gender: ''})) }}>
-                    <option value="">请选择</option>
-                    <option>男</option><option>女</option>
-                  </select>
-                </Field>
-                <Field label="出生日期">
-                  <input className="input" value={form.dob} readOnly={isReadonly}
-                    onChange={e => setForm({...form, dob: e.target.value})} placeholder="YYYY-MM-DD"/>
-                </Field>
-                <Field label="民族 / 族裔">
-                  <input className="input" value={form.ethnicity} readOnly={isReadonly}
-                    onChange={e => setForm({...form, ethnicity: e.target.value})} placeholder="如: 汉族"/>
-                </Field>
-                <Field label="近亲婚配史">
-                  <select className="select" value={form.consang} disabled={isReadonly}
-                    onChange={e => setForm({...form, consang: e.target.value})}>
-                    <option>否</option><option>是</option><option>不详</option>
-                  </select>
-                </Field>
+              <div style={{display:'flex', gap:24, alignItems:'flex-start'}}>
 
-                <div className="field field--wide">
-                  <label className="field__label">家族史</label>
-                  <textarea className="textarea" rows="2" value={form.family} readOnly={isReadonly}
-                    onChange={e => setForm({...form, family: e.target.value})}
-                    placeholder="有无类似疾病患者、近亲婚配、新生儿死亡、晚发肝病等"/>
+                {/* ── 左：基本信息 ── */}
+                <div style={{width:240, flexShrink:0, display:'flex', flexDirection:'column', gap:12}}>
+                  <Field label="姓名" required error={errors.name}>
+                    <input className={'input' + (errors.name ? ' input--error' : '')}
+                      value={form.name} readOnly={isReadonly}
+                      onChange={e => { setForm({...form, name: e.target.value}); setErrors(v => ({...v, name: ''})) }}
+                      placeholder="如: 张三"/>
+                  </Field>
+                  <Field label="性别" required error={errors.gender}>
+                    <select className={'select' + (errors.gender ? ' input--error' : '')}
+                      value={form.gender} disabled={isReadonly}
+                      onChange={e => { setForm({...form, gender: e.target.value}); setErrors(v => ({...v, gender: ''})) }}>
+                      <option value="">请选择</option>
+                      <option>男</option><option>女</option>
+                    </select>
+                  </Field>
+                  <Field label="出生日期">
+                    <input className="input" value={form.dob} readOnly={isReadonly}
+                      onChange={e => setForm({...form, dob: e.target.value})} placeholder="YYYY-MM-DD"/>
+                  </Field>
+                  <Field label="民族 / 族裔">
+                    <input className="input" value={form.ethnicity} readOnly={isReadonly}
+                      onChange={e => setForm({...form, ethnicity: e.target.value})} placeholder="如: 汉族"/>
+                  </Field>
+                  <Field label="近亲婚配史">
+                    <select className="select" value={form.consang} disabled={isReadonly}
+                      onChange={e => setForm({...form, consang: e.target.value})}>
+                      <option>否</option><option>是</option><option>不详</option>
+                    </select>
+                  </Field>
                 </div>
 
-                <div className="field field--wide">
-                  <label className={'field__label' + (errors.text ? ' field__label--error' : '')}>
-                    病史文本 {!isReadonly && <span className="req">*</span>}
-                    {isReadonly && <span style={{marginLeft:8,fontWeight:400,color:'var(--text-4)',fontSize:'var(--fz-11)'}}>历史病史已保留，可在下方追加新内容</span>}
-                  </label>
-                  {isReadonly && (
-                    <div style={{padding:'10px 12px',background:'var(--n-50)',border:'1px solid var(--border)',borderRadius:'var(--r-3)',marginBottom:8,fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.55,whiteSpace:'pre-line',maxHeight:160,overflow:'auto'}}>
-                      {selected.id === HERO_PATIENT.id ? HERO_PATIENT.presentText.slice(0, 300) + '...' : '(历史病史摘要) ' + selected.summary}
+                {/* ── 右：病史 & VCF ── */}
+                <div style={{flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:16}}>
+                  <div className="field">
+                    <label className="field__label">家族史</label>
+                    <textarea className="textarea" rows={3} value={form.family} readOnly={isReadonly}
+                      onChange={e => setForm({...form, family: e.target.value})}
+                      placeholder="有无类似疾病患者、近亲婚配、新生儿死亡、晚发肝病等"
+                      style={{resize:'vertical'}}/>
+                  </div>
+                  <div className="field">
+                    <label className={'field__label' + (errors.text ? ' field__label--error' : '')}>
+                      病史文本 {!isReadonly && <span className="req">*</span>}
+                      {isReadonly && <span style={{marginLeft:8,fontWeight:400,color:'var(--text-4)',fontSize:'var(--fz-11)'}}>历史病史已保留，可在下方追加新内容</span>}
+                    </label>
+                    {isReadonly && (
+                      <div style={{padding:'10px 12px',background:'var(--n-50)',border:'1px solid var(--border)',borderRadius:'var(--r-3)',marginBottom:8,fontSize:'var(--fz-12)',color:'var(--text-2)',lineHeight:1.55,whiteSpace:'pre-line',maxHeight:120,overflow:'auto'}}>
+                        {selected.id === HERO_PATIENT.id ? HERO_PATIENT.presentText.slice(0, 300) + '...' : '(历史病史摘要) ' + selected.summary}
+                      </div>
+                    )}
+                    <textarea className={'textarea' + (errors.text ? ' input--error' : '')}
+                      rows={tab === 'vcf' ? 8 : 13}
+                      style={{resize:'vertical'}}
+                      placeholder={isReadonly ? '追加此次就诊新症状、检查结果（选填）...' : '支持粘贴完整病历。可包含主诉、现病史、既往史、体格检查、辅助检查...'}
+                      value={text}
+                      onChange={e => { setText(e.target.value); setErrors(v => ({...v, text: ''})) }}/>
+                    {errors.text && <div className="field__error">{errors.text}</div>}
+                  </div>
+
+                  {tab === 'vcf' && (
+                    <div className="field">
+                      <label className={'field__label' + (errors.vcf ? ' field__label--error' : '')}>
+                        VCF 文件 <span className="req">*</span>
+                      </label>
+                      <input ref={fileInputRef} type="file" accept=".vcf,.vcf.gz" style={{display:'none'}}
+                        onChange={e => { if (e.target.files[0]) startUpload(e.target.files[0]) }}/>
+
+                      {!vcf && (
+                        <div className={'upload' + (errors.vcf ? ' upload--field-error' : '')}
+                          onClick={() => fileInputRef.current?.click()}
+                          onDragOver={e => e.preventDefault()}
+                          onDrop={onDrop}>
+                          <div className="upload__icon"><IconUpload/></div>
+                          <div className="upload__title">拖拽或点击上传 VCF 文件</div>
+                          <div className="upload__hint">支持 .vcf / .vcf.gz · 单文件 ≤ 2 GB · 参考基因组 GRCh38 / GRCh37</div>
+                        </div>
+                      )}
+
+                      {vcf?.status === 'uploading' && (
+                        <div className="upload upload--uploading">
+                          <div className="upload__title" style={{marginBottom:4}}>{vcf.name}</div>
+                          <div className="upload__hint">{fmtSize(vcf.size)} · 上传中 {Math.round(vcf.progress)}%</div>
+                          <div className="upload__progress-bar">
+                            <div className="upload__progress-fill" style={{width: vcf.progress + '%'}}/>
+                          </div>
+                        </div>
+                      )}
+
+                      {vcf?.status === 'done' && (
+                        <div className="upload__file-card">
+                          <span style={{color:'var(--ok-500)',flexShrink:0}}><IconCheck/></span>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div className="upload__file-name">{vcf.name}</div>
+                            <div className="upload__file-size">{fmtSize(vcf.size)}</div>
+                          </div>
+                          <Btn variant="ghost" size="sm" onClick={() => { resetVcf(); fileInputRef.current?.click() }}>重新上传</Btn>
+                        </div>
+                      )}
+
+                      {vcf?.status === 'error' && (
+                        <div className="upload upload--error">
+                          <div className="upload__icon" style={{color:'var(--err-500)'}}><IconX/></div>
+                          <div className="upload__title" style={{color:'var(--err-700)'}}>{vcf.name}</div>
+                          <div className="upload__error-msg">{vcf.error}</div>
+                          <Btn variant="ghost" size="sm" style={{marginTop:8}} onClick={() => { resetVcf(); fileInputRef.current?.click() }}>重试</Btn>
+                        </div>
+                      )}
+
+                      {errors.vcf && <div className="field__error" style={{marginTop:6}}>{errors.vcf}</div>}
                     </div>
                   )}
-                  <textarea className={'textarea' + (errors.text ? ' input--error' : '')}
-                    rows={isReadonly ? 4 : 8}
-                    placeholder={isReadonly ? '追加此次就诊新症状、检查结果（选填）...' : '支持粘贴完整病历。可包含主诉、现病史、既往史、体格检查、辅助检查...'}
-                    value={text}
-                    onChange={e => { setText(e.target.value); setErrors(v => ({...v, text: ''})) }}/>
-                  {errors.text && <div className="field__error">{errors.text}</div>}
                 </div>
 
-                {tab === 'vcf' && (
-                  <div className="field field--wide">
-                    <label className={'field__label' + (errors.vcf ? ' field__label--error' : '')}>
-                      VCF 文件 <span className="req">*</span>
-                    </label>
-                    <input ref={fileInputRef} type="file" accept=".vcf,.vcf.gz" style={{display:'none'}}
-                      onChange={e => { if (e.target.files[0]) startUpload(e.target.files[0]) }}/>
-
-                    {/* idle */}
-                    {!vcf && (
-                      <div className={'upload' + (errors.vcf ? ' upload--field-error' : '')}
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={e => e.preventDefault()}
-                        onDrop={onDrop}>
-                        <div className="upload__icon"><IconUpload/></div>
-                        <div className="upload__title">拖拽或点击上传 VCF 文件</div>
-                        <div className="upload__hint">支持 .vcf / .vcf.gz · 单文件 ≤ 2 GB · 参考基因组 GRCh38 / GRCh37</div>
-                      </div>
-                    )}
-
-                    {/* uploading */}
-                    {vcf?.status === 'uploading' && (
-                      <div className="upload upload--uploading">
-                        <div className="upload__title" style={{marginBottom:4}}>{vcf.name}</div>
-                        <div className="upload__hint">{fmtSize(vcf.size)} · 上传中 {Math.round(vcf.progress)}%</div>
-                        <div className="upload__progress-bar">
-                          <div className="upload__progress-fill" style={{width: vcf.progress + '%'}}/>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* done */}
-                    {vcf?.status === 'done' && (
-                      <div className="upload__file-card">
-                        <span style={{color:'var(--ok-500)',flexShrink:0}}><IconCheck/></span>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div className="upload__file-name">{vcf.name}</div>
-                          <div className="upload__file-size">{fmtSize(vcf.size)}</div>
-                        </div>
-                        <Btn variant="ghost" size="sm" onClick={() => { resetVcf(); fileInputRef.current?.click() }}>重新上传</Btn>
-                      </div>
-                    )}
-
-                    {/* error */}
-                    {vcf?.status === 'error' && (
-                      <div className="upload upload--error">
-                        <div className="upload__icon" style={{color:'var(--err-500)'}}><IconX/></div>
-                        <div className="upload__title" style={{color:'var(--err-700)'}}>{vcf.name}</div>
-                        <div className="upload__error-msg">{vcf.error}</div>
-                        <Btn variant="ghost" size="sm" style={{marginTop:8}} onClick={() => { resetVcf(); fileInputRef.current?.click() }}>重试</Btn>
-                      </div>
-                    )}
-
-                    {errors.vcf && <div className="field__error" style={{marginTop:6}}>{errors.vcf}</div>}
-                  </div>
-                )}
               </div>
             </div>
 
