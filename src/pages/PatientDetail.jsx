@@ -604,9 +604,39 @@ function HpoRunning({ patientId, setRoute }) {
   const [stage, setStage] = useState(1)
   const [hpoList, setHpoList] = useState(r.stage2.extracted)
   const [q, setQ] = useState('')
+  const [steps3, setSteps3] = useState(() => r.stage3.steps.map(s => ({ ...s })))
+  const navigatedRef = useRef(false)
 
   const removeHpo = (id) => setHpoList(hpoList.filter(h => h.id !== id))
   const handleTerminate = () => setRoute({ view: 'new', patientId })
+
+  // Advance stage 3 steps one by one on a timer
+  useEffect(() => {
+    if (stage !== 3) return
+    const timer = setInterval(() => {
+      setSteps3(prev => {
+        const runIdx = prev.findIndex(s => s.status === 'running')
+        if (runIdx === -1) return prev
+        return prev.map((s, i) => {
+          if (i === runIdx) return { ...s, status: 'done' }
+          if (i === runIdx + 1 && s.status === 'queue') return { ...s, status: 'running' }
+          return s
+        })
+      })
+    }, 2500)
+    return () => clearInterval(timer)
+  }, [stage])
+
+  // Navigate to result page when all stage 3 steps are done
+  useEffect(() => {
+    if (stage !== 3 || navigatedRef.current) return
+    if (!steps3.every(s => s.status === 'done')) return
+    navigatedRef.current = true
+    const t = setTimeout(() => {
+      setRoute({ view: 'patient', id: patientId, tab: 'hpo', sub: 'done' })
+    }, 800)
+    return () => clearTimeout(t)
+  }, [stage, steps3, patientId, setRoute])
 
   return (
     <>
@@ -711,7 +741,7 @@ function HpoRunning({ patientId, setRoute }) {
         {stage === 3 && (
           <div className="stage-card__body">
             <div className="reasoning-steps">
-              {r.stage3.steps.map((s, i) => (
+              {steps3.map((s, i) => (
                 <div key={i} className={'reasoning-step is-' + s.status}>
                   <div className="reasoning-step__icon">
                     {s.status === 'done' ? <IconCheck/> : i+1}
@@ -741,7 +771,38 @@ function HpoRunning({ patientId, setRoute }) {
    ============================================================ */
 function VcfRunning({ patientId, setRoute }) {
   const r = VCF_RUNNING
+  const [steps, setSteps] = useState(() => r.steps.map(s => ({ ...s })))
+  const navigatedRef = useRef(false)
+
   const handleTerminate = () => setRoute({ view: 'new', patientId })
+
+  // Advance pipeline steps one by one on a timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSteps(prev => {
+        const runIdx = prev.findIndex(s => s.status === 'running')
+        if (runIdx === -1) return prev
+        return prev.map((s, i) => {
+          if (i === runIdx) return { ...s, status: 'done' }
+          if (i === runIdx + 1 && s.status === 'queue') return { ...s, status: 'running' }
+          return s
+        })
+      })
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Navigate to result page when all pipeline steps are done
+  useEffect(() => {
+    if (navigatedRef.current) return
+    if (!steps.every(s => s.status === 'done')) return
+    navigatedRef.current = true
+    const t = setTimeout(() => {
+      setRoute({ view: 'patient', id: patientId, tab: 'vcf', sub: 'done' })
+    }, 800)
+    return () => clearTimeout(t)
+  }, [steps, patientId, setRoute])
+
   return (
     <>
       <div className="panel" style={{marginBottom:14}}>
@@ -766,7 +827,7 @@ function VcfRunning({ patientId, setRoute }) {
         </div>
         <div className="stage-card__body">
           <div className="reasoning-steps">
-            {r.steps.map((s, i) => (
+            {steps.map((s, i) => (
               <div key={s.key} className={'reasoning-step is-' + s.status}>
                 <div className="reasoning-step__icon">
                   {s.status === 'done' ? <IconCheck/> : i + 1}
