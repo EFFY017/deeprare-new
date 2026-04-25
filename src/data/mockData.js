@@ -355,7 +355,7 @@ export const VCF_RESULT = {
     { label: "家系来源",    value:"新发" },
     { label: "变异导入",       value: "48,923"},
     { label: "过滤",           value: "214"},
-    { label: "候选(AR/AD 匹配 HPO)",           value: "9"},
+    { label: "候选",           value: "9"},
     { label: "致病 / 可能致病", value: "3"},
   ],
   primary: [

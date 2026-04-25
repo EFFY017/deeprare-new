@@ -3421,6 +3421,13 @@ body { background: var(--bg-sunken); }
 .input--error { border-color: var(--err-500) !important; }
 .input--error:focus { box-shadow: 0 0 0 3px rgba(178,74,69,.22) !important; }
 
+/* ── History task card ── */
+.hist-task-card { transition: border-color .15s, background .15s; }
+.hist-task-card--clickable:hover {
+  /* border-color: var(--accent) !important; */
+  background: var(--accent-soft) !important;
+}
+
 /* ── Stage confirm footer ── */
 .stage-confirm {
   display: flex;

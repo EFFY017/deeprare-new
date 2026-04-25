@@ -35,6 +35,21 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
             {tab === 'vcf' ? <IconDna/> : <IconUser/>}
             {taskTypeLabel}
           </div>
+          {tab === 'hpo' && sub === 'done' && (
+            <div style={{display:'flex',alignItems:'center',gap:16,fontSize:'var(--fz-12)',color:'var(--text-3)',marginLeft:'auto'}}>
+              <StatusDot kind="ok">已完成</StatusDot>
+              <span>完成 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{HPO_DIAG.completedAt}</b></span>
+              <span>耗时 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{HPO_DIAG.duration}</b></span>
+              <Btn variant="primary" size="sm"><IconDownload/>导出诊断报告</Btn>
+            </div>
+          )}
+          {tab === 'vcf' && sub === 'done' && (
+            <div style={{display:'flex',alignItems:'center',gap:16,fontSize:'var(--fz-12)',color:'var(--text-3)',marginLeft:'auto'}}>
+              <StatusDot kind="ok">已完成</StatusDot>
+              <span>完成 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{VCF_RESULT.completedAt}</b></span>
+              <Btn variant="primary" size="sm"><IconDownload/>导出 ACMG 报告</Btn>
+            </div>
+          )}
         </div>
 
         <div className="pd-content">
@@ -151,19 +166,6 @@ function LeftProfile({ patient, isHero, moreOpen, setMoreOpen, onDelete, onBack,
         </div>
       </div>
 
-      {/* <div className="pd-left__foot">
-        <Btn variant="secondary" size="sm" style={{flex:1}} onClick={onEditOpen}><IconFile/>编辑档案</Btn>
-        <Btn variant="ghost" size="sm" onClick={() => setMoreOpen(!moreOpen)}>
-          更多操作 <IconChevron/>
-        </Btn>
-        {moreOpen && (
-          <div className="more-menu" onMouseLeave={() => setMoreOpen(false)}>
-            <div className="more-menu__item is-danger" onClick={() => { setMoreOpen(false); onDelete() }}>
-              <IconTrash/>删除患者…
-            </div>
-          </div>
-        )}
-      </div> */}
     </aside>
   )
 }
@@ -192,25 +194,12 @@ function HpoDone() {
 
   return (
     <>
-      {/* Summary strip + AI 追问 */}
+      {/* AI 追问 */}
       <div className="panel" style={{marginBottom:14}}>
-        <div className="panel__head">
-          <h3 className="panel__title">
-            <StatusDot kind="ok">HPO 表型诊断 · 已完成</StatusDot>
-          </h3>
-          <div style={{display:'flex',alignItems:'center',gap:16,fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
-            <span>完成 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.completedAt}</b></span>
-            <span>耗时 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.duration}</b></span>
-            {/* <span>模型 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{d.model}</b></span> */}
-            <Btn variant="primary" size="sm"><IconDownload/>导出诊断报告</Btn>
-          </div>
-        </div>
-        {/* AI 追问折叠区 */}
         <div
           style={{
             display:'flex',alignItems:'center',justifyContent:'space-between',
             padding:'10px 16px',cursor:'pointer',
-            borderTop:'1px solid var(--border)',
             background: convoOpen ? 'var(--bg-sunken)' : undefined,
           }}
           onClick={() => setConvoOpen(o => !o)}
@@ -865,34 +854,15 @@ function VcfDone() {
 
   return (
     <>
-      <div className="panel" style={{marginBottom:16}}>
-        <div className="panel__head">
-          <h3 className="panel__title"><StatusDot kind="ok">VCF 基因诊断 · 已完成</StatusDot></h3>
-          <div className="flex gap-3" style={{alignItems:'center',fontSize:'var(--fz-12)',color:'var(--text-3)'}}>
-            <span>完成 <b style={{color:'var(--text-1)',fontFamily:'var(--font-mono)'}}>{v.completedAt}</b></span>
-            <Btn variant="primary" size="sm"><IconDownload/>导出 ACMG 报告</Btn>
+      <div className="kpi-inline" style={{marginBottom:16}}>
+        {v.steps.map((s, i) => (
+          <div key={i} className={'kpi-inline__item' + (i === v.steps.length - 1 ? ' kpi-inline__item--accent' : '')}>
+            <div className="kpi-inline__label">{s.label}</div>
+            <div className="kpi-inline__val">{s.value}</div>
+            <div className="kpi-inline__sub">{s.meta}</div>
+            <div className="kpi-inline__arrow"/>
           </div>
-        </div>
-        <div className="panel__body">
-          <div className="kpi-inline">
-            {v.steps.map((s, i) => (
-              <div key={i} className={'kpi-inline__item' + (i === v.steps.length - 1 ? ' kpi-inline__item--accent' : '')}>
-                <div className="kpi-inline__label">{s.label}</div>
-                <div className="kpi-inline__val">{s.value}</div>
-                <div className="kpi-inline__sub">{s.meta}</div>
-                <div className="kpi-inline__arrow"/>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* <div style={{
-          display:'flex',alignItems:'center',gap:0,
-          borderTop:'1px solid var(--border)',
-          background:'var(--bg-sunken)',
-          borderRadius:'0 0 var(--r-4) var(--r-4)',
-          overflow:'hidden',
-        }}>
-        </div> */}
+        ))}
       </div>
 
       <div className="panel">
@@ -1309,10 +1279,9 @@ function HistoryTab({ patient, tasks, onNavigate }) {
 
             {/* task card */}
             <div style={{flex:1,marginLeft:12,paddingBottom: ti < tasks.length - 1 ? 20 : 0}}>
-              {/* header row: time + type badge + status */}
+              {/* header row: time + status + id */}
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap'}}>
                 <span style={{fontFamily:'var(--font-mono)',fontSize:'var(--fz-12)',fontWeight:600,color:'var(--text-2)'}}>{task.time}</span>
-                <span className={`pv2-type-tag pv2-type-tag--${task.type.toLowerCase()}`}>{task.type}</span>
                 {task.status === 'running'
                   ? <span className="running-pill"><span className="spinner"/>进行中</span>
                   : task.status === 'done'
@@ -1332,21 +1301,21 @@ function HistoryTab({ patient, tasks, onNavigate }) {
                 </div>
               )}
 
-              {/* task result card */}
-              <div style={{
-                background:'var(--bg-surface)',border:'1px solid var(--border)',
-                borderRadius:'var(--r-3)',padding:'10px 12px',
-                display:'flex',alignItems:'center',gap:10,
-              }}>
+              {/* task result card — full area clickable */}
+              <div
+                className={task.status !== 'failed' ? 'hist-task-card hist-task-card--clickable' : 'hist-task-card'}
+                style={{
+                  background:'var(--bg-surface)',border:'1px solid var(--border)',
+                  borderRadius:'var(--r-3)',padding:'10px 12px',
+                  display:'flex',alignItems:'center',gap:10,
+                  cursor: task.status !== 'failed' ? 'pointer' : 'default',
+                }}
+                onClick={task.status !== 'failed' ? () => onNavigate(tab, sub) : undefined}
+              >
+                <span className={`pv2-type-tag pv2-type-tag--${task.type.toLowerCase()}`} style={{flexShrink:0}}>{task.type}</span>
                 <div style={{flex:1,fontSize:'var(--fz-13)',color:'var(--text-2)',lineHeight:1.55}}>
                   {task.result}
                 </div>
-                {task.status !== 'failed' && (
-                  <Btn variant="ghost" size="sm" style={{flexShrink:0}}
-                    onClick={() => onNavigate(tab, sub)}>
-                    查看详情<IconChevron/>
-                  </Btn>
-                )}
               </div>
             </div>
           </div>
