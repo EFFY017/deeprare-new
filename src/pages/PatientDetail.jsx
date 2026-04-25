@@ -25,7 +25,7 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
       <LeftProfile patient={patient} isHero={isHero}
         moreOpen={moreOpen} setMoreOpen={setMoreOpen}
         onDelete={openDeleteDialog}
-        onBack={() => setRoute({ view: 'list' })}
+        onBack={() => setRoute({ view: 'list', selectedId: patient.id })}
         onHistOpen={() => setHistOpen(true)}
         onEditOpen={() => setEditOpen(true)}/>
 

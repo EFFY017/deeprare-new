@@ -34,7 +34,7 @@ export default function App() {
 
   let view = null
   if (route.view === 'new') view = <PageNewDiag route={route} setRoute={navigate}/>
-  else if (route.view === 'list') view = <PageListV2 setRoute={navigate} onEditingChange={handleEditingChange}/>
+  else if (route.view === 'list') view = <PageListV2 route={route} setRoute={navigate} onEditingChange={handleEditingChange}/>
   else if (route.view === 'patient') view = <PatientDetail route={route} setRoute={navigate} openDeleteDialog={() => {
     const p = PATIENTS.find(x => x.id === route.id) || HERO_PATIENT
     setDeleteFor(p)

@@ -32,9 +32,9 @@ const STATUS_META = {
 
 const PAGE_SIZE = 8
 
-export default function PageListV2({ setRoute, onEditingChange }) {
+export default function PageListV2({ route, setRoute, onEditingChange }) {
   const [q, setQ]               = useState('')
-  const [selectedId, setSelectedId] = useState(null)
+  const [selectedId, setSelectedId] = useState(route?.selectedId || null)
   const [hideNames, setHideNames]   = useState(() => {
     try { return localStorage.getItem('dr-hide-names') === 'true' } catch { return false }
   })
@@ -86,7 +86,7 @@ export default function PageListV2({ setRoute, onEditingChange }) {
 
       {pendingId && (
         <UnsavedChangesDialog
-          onConfirm={() => { setSelectedId(pendingId); setPendingId(null) }}
+          onDiscard={() => { setSelectedId(pendingId); setPendingId(null) }}
           onCancel={() => setPendingId(null)}
         />
       )}
@@ -236,6 +236,14 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
     onEditingChange?.(false)
   }, [patient.id])
 
+  /* block browser tab close while editing */
+  useEffect(() => {
+    if (!editing) return
+    const handler = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [editing])
+
   const display = saved ? { ...patient, ...saved } : patient
 
   const startEdit = () => {
@@ -287,7 +295,7 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
 
       {pendingTaskNav && (
         <UnsavedChangesDialog
-          onConfirm={() => {
+          onDiscard={() => {
             cancelEdit()
             setRoute({ view: 'patient', id: patient.id, ...pendingTaskNav })
             setPendingTaskNav(null)
@@ -551,19 +559,19 @@ function PatientPanel({ patient, setRoute, onEditingChange }) {
 /* ══════════════════════════════════════════════
    Unsaved Changes Dialog
    ══════════════════════════════════════════════ */
-function UnsavedChangesDialog({ onConfirm, onCancel }) {
+function UnsavedChangesDialog({ onDiscard, onCancel }) {
   return (
     <div className="overlay" onClick={onCancel}>
       <div className="dialog" style={{maxWidth:420}} onClick={e => e.stopPropagation()}>
         <div className="dialog__head">
           <div>
             <div className="dialog__title">当前编辑未保存</div>
-            <div className="dialog__desc">切换患者后，当前编辑的内容将丢失。是否继续？</div>
+            <div className="dialog__desc">离开后，当前编辑的内容将丢失。</div>
           </div>
         </div>
         <div className="dialog__foot">
-          <Btn variant="ghost" size="sm" onClick={onCancel}>返回继续编辑</Btn>
-          <Btn variant="danger" size="sm" onClick={onConfirm}>放弃编辑并切换</Btn>
+          <Btn variant="ghost" size="sm" onClick={onCancel}>返回编辑</Btn>
+          <Btn variant="danger" size="sm" onClick={onDiscard}>不保存，直接离开</Btn>
         </div>
       </div>
     </div>
