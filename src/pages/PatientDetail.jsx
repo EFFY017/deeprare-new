@@ -607,7 +607,7 @@ function ConvoMessages({ messages }) {
 /* ============================================================
    AiQuizFlow — one-by-one interactive Q&A per ds/sections_aiq.jsx
    ============================================================ */
-function AiQuizFlow({ questions, stageNum, onComplete }) {
+function AiQuizFlow({ questions, stageNum, onComplete, readonly = false }) {
   const [visibleCount, setVisibleCount] = useState(1)
   // answers: { [qid]: { idxs?: number[], text?: string, submitted: bool } }
   const [answers, setAnswers] = useState({})
@@ -690,7 +690,9 @@ function AiQuizFlow({ questions, stageNum, onComplete }) {
     }).filter(Boolean).join('；')
   }
 
-  const visibleQs = questions.slice(0, allDone ? questions.length : visibleCount)
+  const visibleQs = readonly
+    ? questions.filter(q => answers[q.id]?.submitted)
+    : questions.slice(0, allDone ? questions.length : visibleCount)
 
   return (
     <div className="aiq2">
@@ -710,7 +712,7 @@ function AiQuizFlow({ questions, stageNum, onComplete }) {
       <div className="aiq2__thread">
         {visibleQs.map((q, qi) => {
           const a = answers[q.id]
-          const locked = !!a?.submitted
+          const locked = !!a?.submitted || readonly
           const isCurrent = qi === currentIdx && !allDone
           const opts = q.options || q.choices || []
           const UNCERTAIN = opts.length // appended "不确定" sits at this virtual index
@@ -821,25 +823,27 @@ function AiQuizFlow({ questions, stageNum, onComplete }) {
       </div>
 
       {/* ── Footer ── */}
-      <div className="aiq2__foot">
-        <div className="aiq2__foot-text">
-        您的答案能帮助 AI 更准确地提取 HPO 表型
-        </div>
-        <div className="aiq2__skip-pop">
-          <button className="aiq2__skip-btn" onClick={() => setSkipPop(p => !p)}>
-            跳过追问，提取 HPO
-          </button>
-          {skipPop && (
-            <div className="aiq2__skip-pop__bubble">
-              停止追问，基于<b> 已回答的 {completedCount} 个问题 </b>提取 HPO。
-              <div className="aiq2__skip-pop__actions">
-                <Btn variant="ghost" size="sm" onClick={() => setSkipPop(false)}>取消</Btn>
-                <Btn variant="primary" size="sm" onClick={() => { setSkipPop(false); onComplete?.() }}>确认提取</Btn>
+      {!readonly && (
+        <div className="aiq2__foot">
+          <div className="aiq2__foot-text">
+            您的答案能帮助 AI 更准确地提取 HPO 表型
+          </div>
+          <div className="aiq2__skip-pop">
+            <button className="aiq2__skip-btn" onClick={() => setSkipPop(p => !p)}>
+              跳过追问，提取 HPO
+            </button>
+            {skipPop && (
+              <div className="aiq2__skip-pop__bubble">
+                停止追问，基于<b> 已回答的 {completedCount} 个问题 </b>提取 HPO。
+                <div className="aiq2__skip-pop__actions">
+                  <Btn variant="ghost" size="sm" onClick={() => setSkipPop(false)}>取消</Btn>
+                  <Btn variant="primary" size="sm" onClick={() => { setSkipPop(false); onComplete?.() }}>确认提取</Btn>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -991,6 +995,7 @@ function HpoRunning({ patientId, setRoute, stage, setStage }) {
             questions={r.stage1.questions}
             stageNum={1}
             onComplete={() => setStage(2)}
+            readonly={stage > 1}
           />
         </div>
       </div>
