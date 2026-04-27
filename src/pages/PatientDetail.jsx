@@ -4,7 +4,7 @@ import {
   IconSearch, IconPlus, IconChevron, IconDownload, IconX, IconDna, IconFile,
   IconSend, IconTrash, IconBeaker, IconUser, IconCheck, IconWarning, IconInfo,
 } from '../components/icons'
-import { PATIENTS, HERO_PATIENT, HPO_DIAG, HPO_RUNNING, VCF_RUNNING, VCF_RESULT, TASK_MAP } from '../data/mockData'
+import { PATIENTS, HERO_PATIENT, HPO_DIAG, HPO_RUNNING, HPO_CATALOG, VCF_RUNNING, VCF_RESULT, TASK_MAP } from '../data/mockData'
 
 /* ============================================================
    PatientDetail · shell
@@ -19,6 +19,7 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
   const [editOpen, setEditOpen] = useState(false)
 
   const taskTypeLabel = tab === 'vcf' ? 'VCF 基因诊断' : 'HPO 表型诊断'
+  const [hpoStage, setHpoStage] = useState(1)
 
   return (
     <div className="pd-shell">
@@ -52,9 +53,27 @@ export function PatientDetail({ route, setRoute, openDeleteDialog }) {
           )}
         </div>
 
+        {tab === 'hpo' && sub === 'running' && (
+          <div className="hpo-stepper-bar">
+            {['AI 追问症状', 'HPO 清单确认', '自动推理'].map((label, i) => {
+              const n = i + 1
+              const cls = n < hpoStage ? 'is-done' : n === hpoStage ? 'is-active' : ''
+              return (
+                <div key={i} className={'stepper__item ' + cls} style={{flex:1}}>
+                  <div className="stepper__label">
+                    <span className="stepper__num">{n}</span>
+                    阶段 {n} · {label}
+                  </div>
+                  <div className="stepper__bar"/>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         <div className="pd-content">
           {tab === 'hpo' && sub === 'done'    && <HpoDone/>}
-          {tab === 'hpo' && sub === 'running' && <HpoRunning patientId={patient.id} setRoute={setRoute}/>}
+          {tab === 'hpo' && sub === 'running' && <HpoRunning patientId={patient.id} setRoute={setRoute} stage={hpoStage} setStage={setHpoStage}/>}
           {tab === 'vcf' && sub === 'done'    && <VcfDone/>}
           {tab === 'vcf' && sub === 'running' && <VcfRunning patientId={patient.id} setRoute={setRoute}/>}
         </div>
@@ -183,7 +202,7 @@ function HpoDone() {
   const subtabs = [
     { key: 'hpo-match', label: 'HPO 匹配' },
     { key: 'evidence',  label: '诊断依据' },
-    ...(selected === 0 ? [{ key: 'diff', label: '鉴别诊断' }] : []),
+    // ...(selected === 0 ? [{ key: 'diff', label: '鉴别诊断' }] : []),
     { key: 'tests',   label: '推荐检查' },
     { key: 'similar', label: '相似病例' },
     { key: 'mdt',     label: 'MDT 建议' },
@@ -586,18 +605,353 @@ function ConvoMessages({ messages }) {
 }
 
 /* ============================================================
+   AiQuizFlow — one-by-one interactive Q&A per ds/sections_aiq.jsx
+   ============================================================ */
+function AiQuizFlow({ questions, stageNum, onComplete }) {
+  const [visibleCount, setVisibleCount] = useState(1)
+  // answers: { [qid]: { idxs?: number[], text?: string, submitted: bool } }
+  const [answers, setAnswers] = useState({})
+  const [skipPop, setSkipPop] = useState(false)
+  const currentRowRef = useRef(null)
+
+  const currentIdx = visibleCount - 1
+  const currentQ = questions[currentIdx]
+  const allDone = visibleCount > questions.length
+  const completedCount = Object.values(answers).filter(a => a.submitted).length
+
+  useEffect(() => {
+    if (allDone) onComplete?.()
+  }, [allDone])
+
+  // scroll current question into center when it appears
+  useEffect(() => {
+    currentRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [visibleCount])
+
+  // ── handlers ──
+  const toggleSingle = (qid, i, locked) => {
+    if (locked) return
+    setAnswers(prev => ({ ...prev, [qid]: { idxs: [i], submitted: false } }))
+  }
+
+  const toggleMulti = (qid, i, optLen, locked) => {
+    if (locked) return
+    const UNCERTAIN = optLen // index of the appended "不确定"
+    setAnswers(prev => {
+      const cur = prev[qid]?.idxs || []
+      const has = cur.includes(i)
+      let next
+      if (i === UNCERTAIN) {
+        next = has ? [] : [UNCERTAIN]
+      } else {
+        const without = cur.filter(x => x !== UNCERTAIN)
+        next = has ? without.filter(x => x !== i) : [...without, i]
+      }
+      return { ...prev, [qid]: { idxs: next, submitted: false } }
+    })
+  }
+
+  const setText = (qid, val, locked) => {
+    if (locked) return
+    setAnswers(prev => ({ ...prev, [qid]: { text: val, submitted: false } }))
+  }
+
+  const canSubmit = (q) => {
+    const a = answers[q.id]
+    if (!a) return false
+    if (q.qtype === 'single') return (a.idxs?.length ?? 0) > 0
+    if (q.qtype === 'multi')  return (a.idxs?.length ?? 0) > 0
+    if (q.qtype === 'text')   return (a.text?.trim()?.length ?? 0) > 0
+    return false
+  }
+
+  const submit = (q) => {
+    if (!canSubmit(q)) return
+    setAnswers(prev => ({ ...prev, [q.id]: { ...prev[q.id], submitted: true } }))
+    if (visibleCount < questions.length) {
+      setVisibleCount(v => v + 1)
+    } else {
+      setVisibleCount(questions.length + 1)
+    }
+  }
+
+  const handleTextKeyDown = (e, q) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); submit(q) }
+  }
+
+  // ── answer label for user bubble ──
+  const answerLabel = (q, a) => {
+    if (!a) return ''
+    if (q.qtype === 'text') return a.text || ''
+    const UNCERTAIN = (q.options || q.choices || []).length
+    return (a.idxs || []).map(i => {
+      if (i === UNCERTAIN) return '不确定'
+      return (q.options || q.choices || [])[i] ?? ''
+    }).filter(Boolean).join('；')
+  }
+
+  const visibleQs = questions.slice(0, allDone ? questions.length : visibleCount)
+
+  return (
+    <div className="aiq2">
+      {/* ── Head ── */}
+      <div className="aiq2__head">
+        <div className="aiq2__head-num">{stageNum ?? 1}</div>
+        <div className="aiq2__head-title">AI 追问症状</div>
+        <span className={`aiq2__head-status${allDone ? '' : ' aiq2__head-status--running'}`}>
+          {allDone
+            ? `已完成 · ${completedCount} 轮问答`
+            : `进行中 · 已答 ${completedCount} 题`}
+        </span>
+        <span className="spacer"/>
+      </div>
+
+      {/* ── Thread ── */}
+      <div className="aiq2__thread">
+        {visibleQs.map((q, qi) => {
+          const a = answers[q.id]
+          const locked = !!a?.submitted
+          const isCurrent = qi === currentIdx && !allDone
+          const opts = q.options || q.choices || []
+          const UNCERTAIN = opts.length // appended "不确定" sits at this virtual index
+
+          return (
+            <div key={q.id} ref={isCurrent ? currentRowRef : null}>
+              {/* AI question row */}
+              <div className="aiq2__qrow">
+                <div className="ava">AI</div>
+                <div className="aiq2__qbubble">
+                  <div className="aiq2__qtext">
+                    {q.text}
+                    {q.cite && <a className="cite-sup">[{q.cite}]</a>}
+                    {q.refs?.map((r, ri) => <a key={ri} className="cite-sup">[{r.n}]</a>)}
+                  </div>
+                  {q.purpose || q.reason ? (
+                    <div className="aiq2__qpurpose">
+                      <b>询问目的</b>{q.purpose || q.reason}
+                    </div>
+                  ) : null}
+
+                  {/* chips — single */}
+                  {q.qtype === 'single' && (
+                    <div className="aiq2__chips">
+                      {opts.map((opt, i) => {
+                        const isUncertain = opt === '不确定'
+                        const sel = a?.idxs?.includes(i)
+                        return (
+                          <span key={i}
+                            className={`aiq2__chip${locked ? ' is-locked' : ''}${sel ? ' is-selected' : ''}${isUncertain ? ' aiq2__chip--uncertain' : ''}`}
+                            onClick={() => toggleSingle(q.id, i, locked)}
+                          >{opt}</span>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* chips — multi (regular options + appended 不确定) */}
+                  {q.qtype === 'multi' && (
+                    <div className="aiq2__chips">
+                      {opts.map((opt, i) => {
+                        const sel = a?.idxs?.includes(i)
+                        return (
+                          <span key={i}
+                            className={`aiq2__chip${locked ? ' is-locked' : ''}${sel ? ' is-selected' : ''}`}
+                            onClick={() => toggleMulti(q.id, i, opts.length, locked)}
+                          >{opt}</span>
+                        )
+                      })}
+                      {/* 不确定 — always appended, dashed */}
+                      <span
+                        className={`aiq2__chip aiq2__chip--uncertain${locked ? ' is-locked' : ''}${a?.idxs?.includes(UNCERTAIN) ? ' is-selected' : ''}`}
+                        onClick={() => toggleMulti(q.id, UNCERTAIN, opts.length, locked)}
+                      >不确定</span>
+                    </div>
+                  )}
+
+                  {/* text input */}
+                  {q.qtype === 'text' && !locked && (
+                    <textarea
+                      className="aiq2__textbox"
+                      placeholder='如无答案可填写"不确定"'
+                      value={a?.text || ''}
+                      onChange={e => setText(q.id, e.target.value, locked)}
+                      onKeyDown={e => handleTextKeyDown(e, q)}
+                    />
+                  )}
+
+                  {/* next-row — only on active, unsubmitted question */}
+                  {isCurrent && !locked && (
+                    <div className="aiq2__next-row">
+                      {q.qtype !== 'text' && (
+                        <span className="aiq2__next-hint">回答后点击「下一题」继续</span>
+                      )}
+                      <Btn variant="primary" size="sm"
+                        disabled={!canSubmit(q)}
+                        onClick={() => submit(q)}>
+                        {qi < questions.length - 1 ? '下一题' : '完成追问'}
+                      </Btn>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* user answer row */}
+              {locked && (
+                <div className="aiq2__arow">
+                  <div className="ava">我</div>
+                  <div className="aiq2__abubble">{answerLabel(q, a)}</div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* all-done AI closing line */}
+        {allDone && (
+          <div className="aiq2__qrow">
+            <div className="ava">AI</div>
+            <div className="aiq2__qbubble">
+              <div className="aiq2__qtext">
+                感谢您的详细回答，我已收集到足够的临床信息。正在整理 HPO 表型清单，请确认后继续。
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* ── Footer ── */}
+      <div className="aiq2__foot">
+        <div className="aiq2__foot-text">
+        您的答案能帮助 AI 更准确地提取 HPO 表型
+        </div>
+        <div className="aiq2__skip-pop">
+          <button className="aiq2__skip-btn" onClick={() => setSkipPop(p => !p)}>
+            跳过追问，提取 HPO
+          </button>
+          {skipPop && (
+            <div className="aiq2__skip-pop__bubble">
+              停止追问，基于<b> 已回答的 {completedCount} 个问题 </b>提取 HPO。
+              <div className="aiq2__skip-pop__actions">
+                <Btn variant="ghost" size="sm" onClick={() => setSkipPop(false)}>取消</Btn>
+                <Btn variant="primary" size="sm" onClick={() => { setSkipPop(false); onComplete?.() }}>确认提取</Btn>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================
+   HpoSearchAdd — search & add HPO terms to the list
+   ============================================================ */
+function HpoSearchAdd({ hpoList, onAdd }) {
+  const [q, setQ] = useState('')
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+
+  const results = useMemo(() => {
+    const kw = q.trim().toLowerCase()
+    if (!kw) return []
+    return HPO_CATALOG.filter(h =>
+      !hpoList.some(x => x.id === h.id) &&
+      (h.id.toLowerCase().includes(kw) ||
+       h.label.toLowerCase().includes(kw) ||
+       h.labelEn.toLowerCase().includes(kw))
+    ).slice(0, 8)
+  }, [q, hpoList])
+
+  // close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleSelect = (h) => {
+    onAdd(h)
+    setQ('')
+    setOpen(false)
+  }
+
+  return (
+    <div ref={wrapRef} style={{display:'flex', alignItems:'center', gap:8, position:'relative'}}>
+      <span style={{fontSize:'var(--fz-12)', color:'var(--text-3)', whiteSpace:'nowrap', fontWeight:500}}>
+        搜索并添加更多HPO 
+      </span>
+      <div className="input-wrap" style={{width:240}}>
+        <span className="input-wrap__icon"><IconSearch/></span>
+        <input
+          className="input"
+          placeholder="搜索代码或名称"
+          value={q}
+          onChange={e => { setQ(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+        />
+      </div>
+      {open && results.length > 0 && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 6px)', right:0,
+          width:320, background:'var(--bg-surface)',
+          border:'1px solid var(--border)', borderRadius:'var(--r-3)',
+          boxShadow:'0 6px 20px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06)',
+          zIndex:20, overflow:'hidden',
+        }}>
+          {results.map(h => (
+            <div
+              key={h.id}
+              onClick={() => handleSelect(h)}
+              style={{
+                display:'flex', alignItems:'center', gap:10,
+                padding:'8px 12px', cursor:'pointer',
+                borderBottom:'1px solid var(--border-subtle)',
+                transition:'background .1s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = ''}
+            >
+              <span style={{
+                fontFamily:'var(--font-mono)', fontSize:'var(--fz-11)', fontWeight:600,
+                color:'var(--accent)', background:'var(--accent-soft)',
+                padding:'1px 5px', borderRadius:'var(--r-1)', flexShrink:0,
+              }}>{h.id}</span>
+              <span style={{flex:1, fontSize:'var(--fz-12)', color:'var(--text-1)', fontWeight:500}}>{h.label}</span>
+              <span style={{fontSize:'var(--fz-11)', color:'var(--text-4)'}}>{h.labelEn}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ============================================================
    HpoRunning
    ============================================================ */
-function HpoRunning({ patientId, setRoute }) {
+function HpoRunning({ patientId, setRoute, stage, setStage }) {
   const r = HPO_RUNNING
-  const [stage, setStage] = useState(1)
   const [hpoList, setHpoList] = useState(r.stage2.extracted)
-  const [q, setQ] = useState('')
   const [steps3, setSteps3] = useState(() => r.stage3.steps.map(s => ({ ...s })))
   const navigatedRef = useRef(false)
+  const stage2Ref = useRef(null)
+  const stage3Ref = useRef(null)
 
   const removeHpo = (id) => setHpoList(hpoList.filter(h => h.id !== id))
   const handleTerminate = () => setRoute({ view: 'new', patientId })
+
+  // scroll to the newly active stage card
+  useEffect(() => {
+    const ref = stage === 2 ? stage2Ref : stage === 3 ? stage3Ref : null
+    if (!ref?.current) return
+    const t = setTimeout(() => {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 50)
+    return () => clearTimeout(t)
+  }, [stage])
 
   // Advance stage 3 steps one by one on a timer
   useEffect(() => {
@@ -627,49 +981,21 @@ function HpoRunning({ patientId, setRoute }) {
     return () => clearTimeout(t)
   }, [stage, steps3, patientId, setRoute])
 
+  const answeredCount = r.stage1.questions.length
+
   return (
     <>
-      <div className="stepper" style={{marginBottom:18}}>
-        {['AI 追问症状','HPO 清单确认','自动推理'].map((label, i) => {
-          const n = i + 1
-          const cls = n < stage ? 'is-done' : n === stage ? 'is-active' : ''
-          return (
-            <div key={i} className={'stepper__item ' + cls} style={{flex:1}}>
-              <div className="stepper__label">
-                <span className="stepper__num">{n}</span>
-                阶段 {n} · {label}
-              </div>
-              <div className="stepper__bar"/>
-            </div>
-          )
-        })}
-      </div>
-
       <div className={'stage-card ' + (stage > 1 ? 'is-done' : stage === 1 ? 'is-active' : '')}>
-        <div className="stage-card__head">
-          <div className="stage-card__title">
-            <span className="stage-card__num">1</span>
-            AI 追问症状
-            {stage > 1
-              ? <Badge tone="ok" dot>已完成 · {r.stage1.messages.filter(m => m.from === 'user').length} 轮问答</Badge>
-              : <span className="running-pill"><span className="spinner"/>追问中</span>}
-          </div>
-          {stage > 1 && <Btn variant="ghost" size="sm">查看完整对话 <IconChevron/></Btn>}
+        <div className="stage-card__body">
+          <AiQuizFlow
+            questions={r.stage1.questions}
+            stageNum={1}
+            onComplete={() => setStage(2)}
+          />
         </div>
-        <div className="stage-card__body" style={{padding:'16px 20px'}}>
-          <ConvoMessages messages={r.stage1.messages}/>
-        </div>
-        {stage === 1 && (
-          <div className="stage-confirm">
-            <span style={{fontSize:'var(--fz-12)',color:'var(--text-3)'}}>AI 已完成追问，请确认后进入 HPO 清单整理。</span>
-            <Btn variant="primary" size="sm" onClick={() => setStage(2)}>
-              <IconCheck/>确认对话完成，进入 HPO 清单
-            </Btn>
-          </div>
-        )}
       </div>
 
-      <div className={'stage-card ' + (stage > 2 ? 'is-done' : stage === 2 ? 'is-active' : stage < 2 ? '' : '')}>
+      <div ref={stage2Ref} className={'stage-card ' + (stage > 2 ? 'is-done' : stage === 2 ? 'is-active' : stage < 2 ? '' : '')}>
         <div className="stage-card__head">
           <div className="stage-card__title">
             <span className="stage-card__num">2</span>
@@ -680,11 +1006,11 @@ function HpoRunning({ patientId, setRoute }) {
                 ? <Badge tone="info" dot>请核对并确认</Badge>
                 : null}
           </div>
-          {stage >= 2 && (
-            <div className="input-wrap" style={{width:260}}>
-              <span className="input-wrap__icon"><IconSearch/></span>
-              <input className="input" placeholder="按 HPO 名称或 HP:ID 搜索..." value={q} onChange={e => setQ(e.target.value)}/>
-            </div>
+          {stage === 2 && (
+            <HpoSearchAdd
+              hpoList={hpoList}
+              onAdd={h => setHpoList(prev => [...prev, h])}
+            />
           )}
         </div>
         {stage >= 2 && (
@@ -698,7 +1024,6 @@ function HpoRunning({ patientId, setRoute }) {
                     {stage === 2 && <span className="hpo__x" onClick={() => removeHpo(h.id)}><IconX/></span>}
                   </span>
                 ))}
-                {stage === 2 && <button className="btn btn--secondary btn--sm" style={{height:22}}><IconPlus/>手动添加</button>}
               </div>
             </div>
             {stage === 2 && (
@@ -713,7 +1038,7 @@ function HpoRunning({ patientId, setRoute }) {
         )}
       </div>
 
-      <div className={'stage-card ' + (stage === 3 ? 'is-active' : '')}>
+      <div ref={stage3Ref} className={'stage-card ' + (stage === 3 ? 'is-active' : '')}>
         <div className="stage-card__head">
           <div className="stage-card__title">
             <span className="stage-card__num">3</span>
